@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+}
+
+/* Tabular numbers for clinical data grids */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mascot Eye Blink Animation */
+@keyframes eyeBlink {
+  0%, 92%, 100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.08);
+  }
+}
+
+.animate-blink {
+  transform-origin: center;
+  animation: eyeBlink 3.5s infinite ease-in-out;
+}
+
+/* Mascot Gentle Idle Bob */
+@keyframes gentleBob {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(1deg);
+  }
+}
+
+.animate-idle-bob {
+  animation: gentleBob 3s infinite ease-in-out;
+}
+
+/* Parallax 2-Layer Background Hills */
+@keyframes parallaxBack {
+  0%, 100% {
+    transform: translateX(0px) scale(1.1);
+  }
+  50% {
+    transform: translateX(-24px) scale(1.1);
+  }
+}
+
+.animate-parallax-back {
+  animation: parallaxBack 16s infinite ease-in-out;
+}
+
+@keyframes parallaxFront {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(28px);
+  }
+}
+
+.animate-parallax-front {
+  animation: parallaxFront 10s infinite ease-in-out;
+}
+
+/* Drifting Clouds */
+@keyframes cloudDrift {
+  0% {
+    transform: translateX(-40px);
+  }
+  50% {
+    transform: translateX(40px);
+  }
+  100% {
+    transform: translateX(-40px);
+  }
+}
+
+.animate-cloud-drift-1 {
+  animation: cloudDrift 20s infinite ease-in-out;
+}
+
+.animate-cloud-drift-2 {
+  animation: cloudDrift 28s infinite ease-in-out reverse;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
