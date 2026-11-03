@@ -1,128 +1,115 @@
-import { useState } from 'react';
-import type { ActiveAppView, PatientRecord } from './types';
-import { PRESET_SCENARIOS, ALL_PATIENTS_LIST } from './data/presetScenarios';
-import { soundFX } from './services/audioSynth';
-import { GlobalNavbar } from './components/GlobalNavbar';
-import { ChildScreeningView } from './components/ChildScreening/ChildScreeningView';
-import { ClinicianDashboardView } from './components/ClinicianDashboard/ClinicianDashboardView';
-import { FamilyReportView } from './components/FamilyReport/FamilyReportView';
-import { NewPatientModal } from './components/NewPatientModal';
-import { ShareOnlineModal } from './components/ShareOnlineModal';
+import { useState, useEffect } from 'react';
+import { WelcomeView } from './views/Welcome/WelcomeView';
+import { OnboardingView } from './views/Onboarding/OnboardingView';
+import { ParentDashboard } from './views/Parent/ParentDashboard';
+import { CadreDashboard } from './views/Cadre/CadreDashboard';
+import { DoctorDashboard } from './views/Doctor/DoctorDashboard';
+import { GameSessionContainer } from './views/Game/GameSessionContainer';
+import { ComponentShowcase } from './views/Dev/ComponentShowcase';
+import { api } from './services/api/client';
+import type { AuthSession } from './types/role';
 
 export function App() {
-  const [currentView, setCurrentView] = useState<ActiveAppView>('child-screening');
-  const [patientRecord, setPatientRecord] = useState<PatientRecord>(PRESET_SCENARIOS.kasus1);
-  const [patientsList, setPatientsList] = useState<PatientRecord[]>(ALL_PATIENTS_LIST);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [isNewPatientModalOpen, setIsNewPatientModalOpen] = useState<boolean>(false);
-  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  const [isDevRoute, setIsDevRoute] = useState(false);
+  const [currentView, setCurrentView] = useState<'welcome' | 'onboarding' | 'game'>('welcome');
+  const [session, setSession] = useState<AuthSession | null>(null);
 
-  // Sync mute state to synth engine
-  const handleToggleMute = () => {
-    const nextMuted = !isMuted;
-    setIsMuted(nextMuted);
-    soundFX.isMuted = nextMuted;
-    if (!nextMuted) soundFX.playClick();
-  };
+  useEffect(() => {
+    // Check if user navigated to /dev or ?dev=1
+    const searchParams = new URLSearchParams(window.location.search);
+    const hasDevParam = searchParams.get('dev') === '1';
+    const isDevPath = window.location.pathname.startsWith('/dev');
+    setIsDevRoute(hasDevParam || isDevPath);
 
-  // Change preset scenario
-  const handleSelectPreset = (presetKey: string) => {
-    if (PRESET_SCENARIOS[presetKey]) {
-      const selected = PRESET_SCENARIOS[presetKey];
-      setPatientRecord(selected);
+    // Check URL route parameters for direct testing
+    const viewParam = searchParams.get('view');
+    if (viewParam === 'onboarding') {
+      setCurrentView('onboarding');
+    } else if (viewParam === 'game') {
+      setCurrentView('game');
     }
+
+    const roleParam = searchParams.get('role');
+    if (roleParam === 'parent') {
+      setSession({ token: 'demo-parent', user: { id: 'u-parent', fullName: 'Ibu Siti Rahma', role: 'parent', avatarId: 'av-1' } });
+    } else if (roleParam === 'cadre') {
+      setSession({ token: 'demo-cadre', user: { id: 'u-cadre', fullName: 'Kader Nurul Hidayah', role: 'cadre', avatarId: 'av-2', posyanduId: 'POSYANDU-MLT-01' } });
+    } else if (roleParam === 'doctor') {
+      setSession({ token: 'demo-doctor', user: { id: 'u-doctor', fullName: 'dr. Budi Santoso, Sp.A', role: 'doctor', avatarId: 'av-3', faskesId: 'PUSK-TEGALREJO' } });
+    } else {
+      // Check existing session in storage
+      const activeSession = api.getSession();
+      if (activeSession) {
+        setSession(activeSession);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    api.logout();
+    setSession(null);
+    setCurrentView('welcome');
   };
 
-  // Update patient across active record and master worklist queue
-  const handleUpdatePatient = (updated: PatientRecord) => {
-    setPatientRecord(updated);
-    setPatientsList((prev) =>
-      prev.map((p) => (p.id === updated.id ? updated : p))
-    );
-  };
+  // Developer Showcase Route (Isolated for Component Inspection)
+  if (isDevRoute) {
+    return <ComponentShowcase />;
+  }
 
-  // Save dynamically registered child
-  const handleSaveNewPatient = (
-    newRecord: PatientRecord,
-    startMode: 'child-screening' | 'clinician-dashboard' | 'family-report'
-  ) => {
-    setPatientRecord(newRecord);
-    setPatientsList((prev) => [newRecord, ...prev.filter((p) => p.id !== newRecord.id)]);
-    setCurrentView(startMode);
-  };
+  // Clinical & Cadre roles expand to a professional workstation layout on desktop/laptop
+  const isExpandedWorkstation =
+    Boolean(session && (session.user.role === 'doctor' || session.user.role === 'cadre') && currentView !== 'game');
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Global Mode Switcher & Preset Header */}
-      <GlobalNavbar
-        currentView={currentView}
-        onViewChange={setCurrentView}
-        currentPatient={patientRecord}
-        onSelectPreset={handleSelectPreset}
-        isMuted={isMuted}
-        onToggleMute={handleToggleMute}
-        onOpenNewPatientModal={() => setIsNewPatientModalOpen(true)}
-        onOpenShareModal={() => setIsShareModalOpen(true)}
-      />
-
-      {/* Main Dynamic View Renderer */}
-      <main className="flex-1">
-        {currentView === 'child-screening' && (
-          <ChildScreeningView
-            patient={patientRecord}
-            onUpdatePatient={handleUpdatePatient}
-            onNavigateClinician={() => setCurrentView('clinician-dashboard')}
-            onNavigateFamily={() => setCurrentView('family-report')}
-          />
+    <div className="min-h-screen w-full bg-white sm:bg-slate-100 flex items-center justify-center sm:p-4 font-sans">
+      <div
+        className={
+          isExpandedWorkstation
+            ? 'w-full max-w-6xl h-[100dvh] sm:h-[min(900px,96vh)] bg-white sm:rounded-3xl sm:shadow-2xl sm:border border-slate-200/90 overflow-hidden relative flex flex-col transition-all duration-normal'
+            : 'w-full sm:max-w-[400px] h-[100dvh] sm:h-[min(820px,94vh)] bg-white sm:rounded-[44px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 overflow-hidden relative flex flex-col transition-all duration-normal'
+        }
+      >
+        {/* Dynamic Notch Pill on Desktop Frame (only shown on mobile-frame mode) */}
+        {!isExpandedWorkstation && (
+          <div className="hidden sm:block absolute top-2 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-800 rounded-pill z-50 pointer-events-none" />
         )}
 
-        {currentView === 'clinician-dashboard' && (
-          <ClinicianDashboardView
-            patient={patientRecord}
-            allPatients={patientsList}
-            onUpdatePatient={handleUpdatePatient}
-            onSwitchToFamily={() => setCurrentView('family-report')}
-            onOpenNewPatientModal={() => setIsNewPatientModalOpen(true)}
-          />
-        )}
-
-        {currentView === 'family-report' && (
-          <FamilyReportView patient={patientRecord} />
-        )}
-      </main>
-
-      {/* Modal Pendaftaran / Input Data Pasien Anak Baru */}
-      <NewPatientModal
-        isOpen={isNewPatientModalOpen}
-        onClose={() => setIsNewPatientModalOpen(false)}
-        onSavePatient={handleSaveNewPatient}
-      />
-
-      {/* Modal Share Online & QR Code HP (Cloudflare) */}
-      <ShareOnlineModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-      />
-
-      {/* Global Clinical Prototype Footer with Asset Licensing Attribution */}
-      <footer className="bg-white border-t border-slate-200 px-4 sm:px-6 py-2.5 text-xs text-slate-500 font-clinical flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="font-bold text-slate-700">NNTS Prototype v1.0.0</span>
-          <span className="text-slate-400">• Puskesmas &amp; Posyandu CDSS</span>
+        {/* Dynamic View Router */}
+        <div className="flex-1 w-full h-full overflow-hidden flex flex-col relative">
+          {currentView === 'game' ? (
+            <GameSessionContainer
+              childId="c-demo"
+              childName="Anisa"
+              onExit={() => setCurrentView(session ? 'welcome' : 'welcome')}
+              onFinishSession={() => {
+                if (session) {
+                  setCurrentView('welcome');
+                } else {
+                  setCurrentView('welcome');
+                }
+              }}
+            />
+          ) : session ? (
+            session.user.role === 'parent' ? (
+              <ParentDashboard session={session} onLogout={handleLogout} />
+            ) : session.user.role === 'cadre' ? (
+              <CadreDashboard session={session} onLogout={handleLogout} />
+            ) : (
+              <DoctorDashboard session={session} onLogout={handleLogout} />
+            )
+          ) : currentView === 'welcome' ? (
+            <WelcomeView
+              onStart={() => setCurrentView('onboarding')}
+              onLogin={() => setCurrentView('onboarding')}
+            />
+          ) : (
+            <OnboardingView
+              onBackToWelcome={() => setCurrentView('welcome')}
+              onComplete={(newSession) => setSession(newSession)}
+            />
+          )}
         </div>
-        <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <span>Ilustrasi: <a href="https://storyset.com" target="_blank" rel="noreferrer" className="text-teal-600 hover:underline font-medium">Storyset by Freepik</a></span>
-          <span>•</span>
-          <span>Avatar: <a href="https://dicebear.com" target="_blank" rel="noreferrer" className="text-teal-600 hover:underline font-medium">DiceBear (CC BY 4.0)</a></span>
-          <span>•</span>
-          <span>Stiker Game: <span className="text-slate-600 font-medium">Fluent Emoji (MIT) &amp; OpenMoji</span></span>
-          <span>•</span>
-          <span>Komponen UI: <span className="text-slate-600 font-medium">Kenney UI Pack (CC0)</span></span>
-          <span>•</span>
-          <span>Ikon: <span className="text-slate-600 font-medium">Lucide (ISC)</span></span>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }

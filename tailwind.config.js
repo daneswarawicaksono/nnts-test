@@ -7,55 +7,85 @@ export default {
   theme: {
     extend: {
       colors: {
-        clinical: {
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          200: '#99f6e4',
-          300: '#5eead4',
-          400: '#2dd4bf',
-          500: '#14b8a6',
-          600: '#0d9488', // Medical Teal primary
-          700: '#0f766e',
-          800: '#115e59',
-          900: '#134e4a',
-          950: '#042f2e',
+        nutri: {
+          teal: {
+            50: '#F0FDF9',
+            100: '#CCFBF1',
+            200: '#99F6E4',
+            300: '#5EEAD4',
+            400: '#2DD4BF',
+            500: '#14B8A6',
+            600: '#0D9488',
+            700: '#0F766E', // Primary CTA
+            800: '#115E59',
+            900: '#134E4A',
+            950: '#042F2E',
+          },
+          orange: {
+            50: '#FFF7ED',
+            100: '#FFEDD5',
+            200: '#FED7AA',
+            300: '#FDBA74',
+            400: '#FB923C',
+            500: '#F97316',
+            600: '#EA580C',
+            700: '#C2410C',
+          },
         },
-        child: {
-          amber: '#F59E0B',
-          coral: '#FB7185',
-          rose: '#F43F5E',
-          sky: '#38BDF8',
-          mint: '#34D399',
-          emerald: '#10B981',
-          sun: '#FDE047',
-          violet: '#A78BFA',
-          cream: '#FFFBEB',
-          skySoft: '#F0F9FF',
-        }
+        slate: {
+          900: '#0F172A',
+          600: '#475569',
+          500: '#64748B',
+          200: '#E2E8F0',
+          100: '#F1F5F9',
+          50: '#F8FAFC',
+        },
       },
       fontFamily: {
-        child: ['Quicksand', 'Fredoka', 'sans-serif'],
-        clinical: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
       },
-      animation: {
-        'bounce-gentle': 'bounce-gentle 2s infinite',
-        'pulse-subtle': 'pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'float': 'float 3s ease-in-out infinite',
+      borderRadius: {
+        'sm': '8px',
+        'md': '14px',
+        'lg': '20px',
+        'xl': '28px',
+        'pill': '9999px',
+      },
+      boxShadow: {
+        'subtle': '0 2px 8px 0 rgba(15, 23, 42, 0.04)',
+        'card': '0 4px 20px -2px rgba(15, 23, 42, 0.06)',
+        'sheet': '0 -8px 32px 0 rgba(15, 23, 42, 0.12)',
+        'btn-primary': '0 8px 24px -4px rgba(15, 118, 110, 0.35)',
+        'btn-warm': '0 8px 24px -4px rgba(249, 115, 22, 0.35)',
+      },
+      transitionTimingFunction: {
+        'spring-overshoot': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'spring-smooth': 'cubic-bezier(0.16, 1, 0.3, 1)',
+      },
+      transitionDuration: {
+        'fast': '140ms',
+        'normal': '240ms',
+        'screen': '320ms',
       },
       keyframes: {
-        'bounce-gentle': {
-          '0%, 100%': { transform: 'translateY(-4%)' },
-          '50%': { transform: 'translateY(0)' },
-        },
-        'pulse-subtle': {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.85' },
-        },
-        'float': {
+        'float-breath': {
           '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
-        }
-      }
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        'shadow-breath': {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.25' },
+          '50%': { transform: 'scale(0.82)', opacity: '0.12' },
+        },
+        'shimmer': {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+      },
+      animation: {
+        'float-breath': 'float-breath 3.2s ease-in-out infinite',
+        'shadow-breath': 'shadow-breath 3.2s ease-in-out infinite',
+        'shimmer': 'shimmer 1.8s infinite',
+      },
     },
   },
   plugins: [],
