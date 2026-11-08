@@ -1,0 +1,227 @@
+openapi: 3.0.3
+info:
+  title: NNTS Backend API — Neuro-Nutrient Triage System
+  description: Backend API untuk penapisan stunting dan hidden hunger (Fe, Zn, B12) balita berbasis Hono & Cloudflare Workers.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8787
+    description: Local Development Server
+  - url: https://nnts-api.workers.dev
+    description: Cloudflare Workers Production
+
+paths:
+  /health:
+    get:
+      summary: Health check service
+      responses:
+        '200':
+          description: Service aktif
+
+  /api/v1/sync/batch-screenings:
+    post:
+      summary: Sinkronisasi batch data skrining dari IndexedDB gawai Posyandu
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - batch_id
+                - posyandu_id
+                - records
+              properties:
+                batch_id:
+                  type: string
+                  example: batch-20261108-01
+                posyandu_id:
+                  type: string
+                  example: POS-DIY-MLT03
+                records:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ScreeningRecord'
+      responses:
+        '200':
+          description: Batch berhasil diproses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [SUCCESS, PARTIAL, FAILED]
+                  processed_count:
+                    type: integer
+                  synced_uuids:
+                    type: array
+                    items:
+                      type: string
+                  rejected_uuids:
+                    type: array
+                    items:
+                      type: string
+
+  /api/v1/fktp/{fktp_code}/worklist:
+    get:
+      summary: Daftar antrean pasien terstratifikasi untuk Puskesmas/FKTP
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: fktp_code
+          in: path
+          required: true
+          schema:
+            type: string
+            example: P3404010101
+        - name: tier
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [TIER_1_MERAH, TIER_2_KUNING, TIER_HIJAU]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Daftar worklist dokter terurut Tier-1 Merah ke Tier Hijau
+
+  /api/v1/fktp/encounters/{screening_uuid}/clinical-decision:
+    post:
+      summary: Pencatatan keputusan klinis Human-in-the-Loop dokter Puskesmas
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: screening_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - doctor_id
+                - intervention_chosen
+                - clinical_notes
+                - follow_up_weeks
+              properties:
+                doctor_id:
+                  type: string
+                  example: dr-budi-sp-a
+                intervention_chosen:
+                  type: array
+                  items:
+                    type: string
+                    example: IRON_SYRUP_3MG_KG_DAY
+                clinical_notes:
+                  type: string
+                  example: Berikan sirup besi malam hari selama 6 minggu.
+                follow_up_weeks:
+                  type: integer
+                  enum: [4, 6]
+      responses:
+        '200':
+          description: Keputusan tersimpan dan Bundle FHIR siap diunduh
+
+  /api/v1/encounters/{screening_uuid}/fhir-bundle:
+    get:
+      summary: Unduh dokumen transaksi HL7 FHIR R4 Bundle (LOINC & SNOMED-CT)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: screening_uuid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dokumen FHIR Bundle JSON valid
+          content:
+            application/fhir+json:
+              schema:
+                type: object
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ScreeningRecord:
+      type: object
+      required:
+        - screening_uuid
+        - subject_pseudo_uuid
+        - encounter_context
+        - somatometry_input
+        - neurocognitive_telemetry
+        - triage_result
+      properties:
+        screening_uuid:
+          type: string
+          format: uuid
+        subject_pseudo_uuid:
+          type: string
+          format: uuid
+        encounter_context:
+          type: object
+          properties:
+            posyandu_id:
+              type: string
+            fktp_code:
+              type: string
+            kader_operator_id:
+              type: string
+            age_in_months:
+              type: integer
+              minimum: 24
+              maximum: 59
+            sex:
+              type: string
+              enum: [M, F]
+            assessed_at_iso:
+              type: string
+              format: date-time
+        somatometry_input:
+          type: object
+          properties:
+            weight_kg:
+              type: number
+            height_cm:
+              type: number
+            muac_lila_cm:
+              type: number
+            strict_plant_based_diet:
+              type: boolean
+        neurocognitive_telemetry:
+          type: object
+        triage_result:
+          type: object
+          properties:
+            tier:
+              type: string
+              enum: [TIER_1_MERAH, TIER_2_KUNING, TIER_HIJAU]
+            suspected_deficiency:
+              type: array
+              items:
+                type: string
+            cdss_confidence_score:
+              type: number
