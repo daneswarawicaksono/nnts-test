@@ -6,19 +6,43 @@
 
 @layer base {
   :root {
-    --color-teal-600: #0D9488;
-    --color-teal-700: #0F766E;
-    --color-orange-500: #F97316;
-    --color-slate-900: #0F172A;
-    --color-slate-600: #475569;
+    /* Surfaces */
+    --bg-app: #f4fbf7;
+    --bg-card: #ffffff;
+    --bg-card-subtle: #f8fafc;
+
+    /* Primary Brand (Kumi / Posyandu Green) */
+    --brand-primary: #117b6a;
+    --brand-primary-light: #e6f7f3;
+    --brand-accent: #22c55e;
+    --brand-accent-shadow: #15803d;
+
+    /* Gamified Feedback */
+    --streak-orange: #ea580c;
+    --streak-bg: #fff7ed;
+    --coin-gold: #f59e0b;
+    --coin-bg: #fef3c7;
+    --heart-red: #ef4444;
+
+    /* Typography */
+    --text-main: #1e293b;
+    --text-muted: #475569;
+    --text-subtle: #64748b;
+
+    /* Radii */
+    --radius-card: 22px;
+    --radius-btn: 18px;
+    --radius-pill: 9999px;
+
+    /* Motion Curves */
     --ease-spring-overshoot: cubic-bezier(0.22, 1, 0.36, 1);
     --ease-spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   body {
     font-family: 'Figtree', system-ui, -apple-system, sans-serif;
-    color: #0F172A;
-    background-color: #F8FAFC;
+    color: var(--text-main);
+    background-color: var(--bg-app);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -50,6 +74,36 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+/* Card Styling from Design Specification */
+.card-playful {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  box-shadow: 0 4px 16px -2px rgba(15, 118, 110, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* 3D Chunky Pushable Button */
+.btn-gamified-primary {
+  background-color: #15803d;
+  box-shadow: 0 4px 0 #14532d;
+  border-radius: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.btn-gamified-primary:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #14532d;
+}
+
+/* 44px Touch Target Helper */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Accessible Muted Text (5.4:1 contrast on white) */

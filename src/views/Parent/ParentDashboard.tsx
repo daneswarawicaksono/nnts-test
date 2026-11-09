@@ -19,6 +19,7 @@ import {
 import { GlassCard } from '../../design-system/primitives/GlassCard';
 import { Button } from '../../design-system/primitives/Button';
 import { StreakBadge } from '../../design-system/primitives/StreakBadge';
+import { DailyFlameStreakCard } from '../../design-system/primitives/DailyFlameStreakCard';
 import { ProgressBar } from '../../design-system/primitives/ProgressBar';
 import { BottomSheet } from '../../design-system/primitives/BottomSheet';
 import { NutriSprout } from '../../design-system/mascot/NutriSprout';
@@ -207,7 +208,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
   };
 
   return (
-    <div className="w-full h-full min-h-[100dvh] bg-[#F8FAFC] flex flex-col justify-between font-sans select-none relative overflow-hidden">
+    <div className="w-full h-full min-h-[100dvh] bg-[#F4FBF7] flex flex-col justify-between font-sans select-none relative overflow-hidden">
       {/* TOP BAR / MULTI-PROFILE SELECTOR (OPSI INTEGRATED BAR) */}
       <header className="px-5 pt-5 pb-3 flex items-center justify-between z-10 shrink-0">
         {/* Child Profile Trigger */}
@@ -253,6 +254,9 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
         {/* TAB 1: BERANDA */}
         {activeTab === 'beranda' && (
           <div className="space-y-4 animate-in fade-in duration-normal">
+            {/* Daily Flame Streak Card from Gamified Design Spec */}
+            <DailyFlameStreakCard currentStreak={5} />
+
             {/* IN-CARD CONTEXTUAL ACTION HERO (OPSI B1) */}
             <GlassCard padding="lg" className="border-teal-200/80 bg-white/95 space-y-3.5">
               <div className="flex items-start justify-between">
@@ -284,7 +288,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
               {/* ACTION BUTTONS (Mulai Game) */}
               <div className="pt-1">
                 <Button
-                  variant="primary"
+                  variant="gamified"
                   fullWidth
                   size="md"
                   onClick={() => {

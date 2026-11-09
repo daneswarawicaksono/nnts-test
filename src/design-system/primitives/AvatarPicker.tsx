@@ -30,7 +30,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
 }) => {
   return (
     <div className="w-full">
-      <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
+      <div className="grid grid-cols-3 gap-3">
         {options.map((opt) => {
           const isSelected = selectedId === opt.id;
           return (
@@ -38,12 +38,10 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
               key={opt.id}
               type="button"
               onClick={() => onSelect(opt.id)}
-              className={`relative flex flex-col items-center justify-center p-2.5 rounded-lg border-2 transition-all duration-fast select-none ${
-                opt.bgColor
-              } ${
+              className={`relative flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all duration-fast select-none cursor-pointer min-h-[44px] ${
                 isSelected
-                  ? 'border-nutri-teal-700 shadow-sm scale-105'
-                  : 'border-transparent hover:border-slate-200 opacity-80 hover:opacity-100'
+                  ? 'border-emerald-600 bg-emerald-50/90 shadow-sm scale-105'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
               <span className="text-2xl mb-1">{opt.emoji}</span>
@@ -52,7 +50,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
               </span>
 
               {isSelected && (
-                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-nutri-teal-700 text-white flex items-center justify-center shadow-xs">
+                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs">
                   <Check className="w-3 h-3 stroke-[3]" />
                 </div>
               )}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Check, ArrowRight, Play, Lock, ChevronLeft, Zap, Apple, Footprints, Trophy } from 'lucide-react';
+import { Star, Check, ArrowRight, Play, Lock, ChevronLeft, Zap, Apple, Footprints, Trophy, Heart, Flame } from 'lucide-react';
 import { NutriSprout } from '../../../design-system/mascot/NutriSprout';
 import { SpeechBubble } from '../../../design-system/primitives/SpeechBubble';
 import { Button } from '../../../design-system/primitives/Button';
@@ -41,12 +41,12 @@ const ISLANDS: IslandNode[] = [
     nutrient: 'Zat Besi (Fe)',
     icon: 'zap',
     colorScheme: {
-      activeBg: 'bg-sky-700 text-white',
-      activeBorder: 'border-sky-500 ring-4 ring-sky-200',
-      activeShadow: 'shadow-lg shadow-sky-800/30',
-      completedBg: 'bg-sky-100 border-sky-300 text-sky-900',
-      lockedBg: 'bg-slate-100 border-slate-200 text-slate-700',
-      textColor: 'text-sky-800',
+      activeBg: 'bg-[#DCFCE7] text-[#15803D]',
+      activeBorder: 'border-2 border-[#16A34A] ring-4 ring-[#86EFAC]/60',
+      activeShadow: 'shadow-lg shadow-emerald-600/10',
+      completedBg: 'bg-[#DCFCE7] border border-[#86EFAC] text-[#15803D]',
+      lockedBg: 'bg-slate-100 border border-slate-200 text-slate-700',
+      textColor: 'text-[#15803D]',
     },
   },
   {
@@ -56,12 +56,12 @@ const ISLANDS: IslandNode[] = [
     nutrient: 'Seng (Zn)',
     icon: 'apple',
     colorScheme: {
-      activeBg: 'bg-amber-600 text-white',
-      activeBorder: 'border-amber-400 ring-4 ring-amber-200',
-      activeShadow: 'shadow-lg shadow-amber-700/30',
-      completedBg: 'bg-amber-100 border-amber-300 text-amber-900',
-      lockedBg: 'bg-slate-100 border-slate-200 text-slate-700',
-      textColor: 'text-amber-800',
+      activeBg: 'bg-[#E0F2FE] text-[#0369A1]',
+      activeBorder: 'border-2 border-[#0284C7] ring-4 ring-[#38BDF8]/60',
+      activeShadow: 'shadow-lg shadow-sky-600/10',
+      completedBg: 'bg-[#E0F2FE] border border-[#7DD3FC] text-[#0369A1]',
+      lockedBg: 'bg-slate-100 border border-slate-200 text-slate-700',
+      textColor: 'text-[#0369A1]',
     },
   },
   {
@@ -71,12 +71,12 @@ const ISLANDS: IslandNode[] = [
     nutrient: 'Vitamin B12',
     icon: 'footprints',
     colorScheme: {
-      activeBg: 'bg-purple-700 text-white',
-      activeBorder: 'border-purple-500 ring-4 ring-purple-200',
-      activeShadow: 'shadow-lg shadow-purple-800/30',
-      completedBg: 'bg-purple-100 border-purple-300 text-purple-900',
-      lockedBg: 'bg-slate-100 border-slate-200 text-slate-700',
-      textColor: 'text-purple-800',
+      activeBg: 'bg-[#FFEDD5] text-[#C2410C]',
+      activeBorder: 'border-2 border-[#EA580C] ring-4 ring-[#FDBA74]/60',
+      activeShadow: 'shadow-lg shadow-orange-600/10',
+      completedBg: 'bg-[#FFEDD5] border border-[#FDBA74] text-[#C2410C]',
+      lockedBg: 'bg-slate-100 border border-slate-200 text-slate-700',
+      textColor: 'text-[#C2410C]',
     },
   },
   {
@@ -86,12 +86,12 @@ const ISLANDS: IslandNode[] = [
     nutrient: 'Selebrasi Nutrisi',
     icon: 'trophy',
     colorScheme: {
-      activeBg: 'bg-amber-400 text-amber-950',
-      activeBorder: 'border-amber-300 ring-4 ring-amber-200',
-      activeShadow: 'shadow-xl shadow-amber-400/40',
-      completedBg: 'bg-amber-100 border-amber-400 text-amber-950',
-      lockedBg: 'bg-slate-100 border-slate-200 text-slate-700',
-      textColor: 'text-amber-800',
+      activeBg: 'bg-[#F3E8FF] text-[#7E22CE]',
+      activeBorder: 'border-2 border-[#9333EA] ring-4 ring-[#D8B4FE]/60',
+      activeShadow: 'shadow-xl shadow-purple-600/10',
+      completedBg: 'bg-[#F3E8FF] border border-[#D8B4FE] text-[#7E22CE]',
+      lockedBg: 'bg-slate-100 border border-slate-200 text-slate-700',
+      textColor: 'text-[#7E22CE]',
     },
   },
 ];
@@ -139,16 +139,16 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
   };
 
   return (
-    <div className="w-full h-full min-h-[100dvh] bg-gradient-to-b from-[#F0FDF4] via-[#F8FAFC] to-[#FFFBEB] flex flex-col justify-between font-sans select-none relative overflow-hidden">
-      {/* MAP TOP BAR */}
-      <header className="px-5 pt-4 sm:pt-7 pb-2.5 flex items-center justify-between z-20 shrink-0 bg-white/70 backdrop-blur-md border-b border-slate-200/80">
+    <div className="w-full h-full min-h-[100dvh] bg-[#F4FBF7] flex flex-col justify-between font-sans select-none relative overflow-hidden">
+      {/* MAP TOP FLOATING HUD BAR (Clearance pt-12 for camera notch) */}
+      <header className="px-4 pt-12 pb-3 flex items-center justify-between z-20 shrink-0 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
         <button
           type="button"
           onClick={onExit}
           className="min-h-[44px] min-w-[44px] px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer active:scale-95"
           aria-label="Keluar ke menu utama"
         >
-          <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+          <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
           <span>Keluar</span>
         </button>
 
@@ -161,13 +161,18 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
           </span>
         </div>
 
-        {/* Star Counter Badge */}
-        <div className="flex items-center gap-1 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-full text-xs font-black text-amber-900 shadow-xs">
-          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-          <span>{completedStarsCount}/3</span>
+        {/* Floating HUD Economies (Stars & Heart Stamina) */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-[#FFF7ED] border border-[#FED7AA] px-2.5 py-1 rounded-full text-xs font-black text-[#C2410C] shadow-xs">
+            <Flame className="w-3.5 h-3.5 fill-[#EA580C] text-[#EA580C]" />
+            <span>{completedStarsCount}/3</span>
+          </div>
+          <div className="flex items-center gap-1 bg-[#FEF2F2] border border-[#FECACA] px-2 py-1 rounded-full text-xs font-black text-[#EF4444] shadow-xs">
+            <Heart className="w-3.5 h-3.5 fill-[#EF4444] text-[#EF4444]" />
+            <span>∞</span>
+          </div>
         </div>
       </header>
-
       {/* MAP STAGE CANVAS (SCROLLABLE ADVENTURE PATH) */}
       <main className="flex-1 overflow-y-auto px-5 py-4 z-10 relative flex flex-col justify-between">
         {/* Timi Mascot Header Guidance (Natural trail layout without nested card) */}
@@ -228,24 +233,30 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
                       : `${island.colorScheme.lockedBg} cursor-not-allowed`
                   }`}
                 >
-                  {/* Island Circular Icon (Clean SVG) */}
+                  {/* Stepping Stone Node with border-4 border-white rings */}
                   <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-xs transition-transform ${
-                      isActive ? 'bg-white/20 scale-110 text-white' : completed ? 'bg-white text-slate-800' : 'bg-slate-200 text-slate-400'
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border-4 border-white shadow-md transition-transform ${
+                      isActive
+                        ? 'scale-105'
+                        : completed
+                        ? 'opacity-100'
+                        : 'bg-slate-200 text-slate-400'
                     }`}
+                    style={{
+                      backgroundColor: isActive || completed ? undefined : '#E2E8F0',
+                    }}
                   >
                     {island.icon === 'zap' && <Zap className="w-6 h-6 fill-current" />}
                     {island.icon === 'apple' && <Apple className="w-6 h-6 fill-current" />}
                     {island.icon === 'footprints' && <Footprints className="w-6 h-6" />}
                     {island.icon === 'trophy' && <Trophy className="w-6 h-6 fill-current" />}
                   </div>
-
                   {/* Island Details */}
                   <div className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span
                         className={`text-xs font-black uppercase tracking-wider ${
-                          isActive ? 'text-white' : 'text-slate-600'
+                          isActive ? island.colorScheme.textColor : 'text-slate-600'
                         }`}
                       >
                         Tahap {island.id}
@@ -259,15 +270,15 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
 
                     <h3
                       className={`text-xs sm:text-sm font-black truncate leading-tight mt-0.5 ${
-                        isActive ? 'text-white' : 'text-slate-900'
+                        isActive ? island.colorScheme.textColor : 'text-slate-900'
                       }`}
                     >
                       {island.title}
                     </h3>
 
                     <p
-                      className={`text-xs truncate mt-0.5 ${
-                        isActive ? 'text-white/90 font-medium' : 'text-slate-600'
+                      className={`text-xs truncate mt-0.5 font-medium ${
+                        isActive ? island.colorScheme.textColor : 'text-slate-600'
                       }`}
                     >
                       {island.subtitle}

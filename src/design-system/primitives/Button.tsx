@@ -2,7 +2,7 @@ import React from 'react';
 import { Loader2 } from 'lucide-react';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'warm' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'warm' | 'secondary' | 'ghost' | 'gamified';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   isLoading?: boolean;
@@ -27,17 +27,19 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles = {
     primary:
-      'bg-nutri-teal-700 text-white shadow-btn-primary hover:bg-nutri-teal-800 focus-visible:ring-nutri-teal-600',
+      'bg-nutri-teal-700 text-white shadow-btn-primary hover:bg-nutri-teal-800 active:translate-y-[1px] focus-visible:ring-nutri-teal-600',
+    gamified:
+      'bg-[#15803D] text-white shadow-[0_4px_0_#14532D] active:shadow-[0_1px_0_#14532D] active:translate-y-[3px] hover:bg-[#166534] focus-visible:ring-emerald-600 font-extrabold',
     warm:
-      'bg-nutri-orange-500 text-white shadow-btn-warm hover:bg-nutri-orange-600 focus-visible:ring-nutri-orange-500',
+      'bg-nutri-orange-500 text-white shadow-btn-warm hover:bg-nutri-orange-600 active:translate-y-[1px] focus-visible:ring-nutri-orange-500',
     secondary:
-      'bg-white text-slate-900 border border-slate-200 shadow-subtle hover:bg-slate-50 focus-visible:ring-slate-400',
+      'bg-white text-slate-900 border border-slate-200 shadow-subtle hover:bg-slate-50 active:translate-y-[1px] focus-visible:ring-slate-400',
     ghost:
       'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-slate-300',
   };
 
   const sizeStyles = {
-    sm: 'text-xs py-2 px-4 gap-1.5 min-h-[36px]',
+    sm: 'text-xs py-2 px-4 gap-1.5 min-h-[44px]',
     md: 'text-sm py-3 px-5 gap-2 min-h-[44px]',
     lg: 'text-base py-3.5 px-6 gap-2.5 min-h-[50px]',
   };

@@ -170,7 +170,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
       : 'Konfirmasi wilayah faskes tugasmu.';
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-[#F0FDF4] via-[#F8FAFC] to-[#FFFBEB] flex flex-col justify-between px-5 py-5 sm:py-6 font-sans select-none relative overflow-y-auto">
+    <div className="w-full h-full bg-[#F4FBF7] flex flex-col justify-between px-5 pt-12 pb-6 font-sans select-none relative overflow-y-auto">
       {/* TOP HEADER: Back Button & Stepper */}
       <header className="w-full max-w-sm mx-auto flex items-center justify-between gap-3 mb-4 shrink-0">
         <button
