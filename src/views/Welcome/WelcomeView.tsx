@@ -82,7 +82,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart, onLogin }) =>
           <button
             type="button"
             onClick={onLogin}
-            className="text-nutri-teal-700 hover:text-nutri-teal-800 font-bold hover:underline cursor-pointer py-1"
+            className="text-nutri-teal-700 hover:text-nutri-teal-800 font-bold hover:underline cursor-pointer min-h-[44px] inline-flex items-center px-1.5 active:scale-95"
           >
             Masuk
           </button>

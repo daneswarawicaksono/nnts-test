@@ -178,7 +178,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
               soundSynth.playPop();
               setActiveTab('saved');
             }}
-            className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            className={`min-h-[44px] py-2 px-3 text-xs font-bold rounded-lg flex items-center justify-center transition-all cursor-pointer ${
               activeTab === 'saved'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-[#475569] hover:text-slate-900'
@@ -192,7 +192,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
               soundSynth.playPop();
               setActiveTab('manual');
             }}
-            className={`py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            className={`min-h-[44px] py-2 px-3 text-xs font-bold rounded-lg flex items-center justify-center transition-all cursor-pointer ${
               activeTab === 'manual'
                 ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-[#475569] hover:text-slate-900'
