@@ -1,0 +1,35 @@
+{
+  "modelVersion": "1.0.0-champion",
+  "architecture": "LightGBM + Deterministic Guardrails",
+  "thresholdMerah": 0.205,
+  "guardrails": {
+    "muacMinCm": 11.5,
+    "zHazMinSd": -2.75
+  },
+  "targetMapping": {
+    "0": "Tier-1 Alert",
+    "1": "Tier-2 Alert",
+    "2": "Normal"
+  },
+  "featureList": [
+    "age_months",
+    "is_male",
+    "weight_kg",
+    "height_cm",
+    "bmi",
+    "muac_lila_cm",
+    "z_waz",
+    "z_haz",
+    "z_whz",
+    "simple_rt_mean_ms",
+    "choice_rt_mean_ms",
+    "rt_variability_sd",
+    "gonogo_commission_err",
+    "gonogo_omission_err",
+    "working_mem_span",
+    "neuro_motor_delay_index",
+    "inhibitory_deficit_ratio",
+    "somato_cognitive_ratio",
+    "growth_deficit_composite"
+  ]
+}
