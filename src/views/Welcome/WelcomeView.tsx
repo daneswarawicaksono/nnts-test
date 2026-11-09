@@ -59,8 +59,8 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart, onLogin, onEx
           sejak dini
         </h1>
 
-        {/* 1 Kalimat Penjelas Saja */}
-        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-[270px] text-pretty">
+        {/* 1 Kalimat Penjelas Saja (7.1:1 WCAG AA Contrast) */}
+        <p className="text-xs sm:text-sm text-[#374151] font-medium leading-relaxed max-w-[270px] text-pretty">
           Pantau tumbuh kembang dan penuhi gizi terbaik buah hati dengan mudah bersama&nbsp;Posyandu.
         </p>
       </main>

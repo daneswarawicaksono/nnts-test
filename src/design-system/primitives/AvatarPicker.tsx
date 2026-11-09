@@ -9,12 +9,12 @@ export interface AvatarOption {
 }
 
 export const DEFAULT_AVATARS: AvatarOption[] = [
-  { id: 'av-1', name: 'Tunas Hijau', emoji: '🌱', bgColor: 'bg-emerald-100' },
-  { id: 'av-2', name: 'Jeruk Manis', emoji: '🍊', bgColor: 'bg-orange-100' },
-  { id: 'av-3', name: 'Apel Merah', emoji: '🍎', bgColor: 'bg-rose-100' },
-  { id: 'av-4', name: 'Bintang Emas', emoji: '⭐', bgColor: 'bg-amber-100' },
-  { id: 'av-5', name: 'Kelinci Lincah', emoji: '🐰', bgColor: 'bg-sky-100' },
-  { id: 'av-6', name: 'Kucing Pintar', emoji: '🐱', bgColor: 'bg-purple-100' },
+  { id: 'av-1', name: 'Tunas', emoji: '🌱', bgColor: 'bg-emerald-100' },
+  { id: 'av-2', name: 'Jeruk', emoji: '🍊', bgColor: 'bg-orange-100' },
+  { id: 'av-3', name: 'Apel', emoji: '🍎', bgColor: 'bg-rose-100' },
+  { id: 'av-4', name: 'Bintang', emoji: '⭐', bgColor: 'bg-amber-100' },
+  { id: 'av-5', name: 'Kelinci', emoji: '🐰', bgColor: 'bg-sky-100' },
+  { id: 'av-6', name: 'Kucing', emoji: '🐱', bgColor: 'bg-purple-100' },
 ];
 
 export interface AvatarPickerProps {
@@ -47,7 +47,7 @@ export const AvatarPicker: React.FC<AvatarPickerProps> = ({
               }`}
             >
               <span className="text-2xl mb-1">{opt.emoji}</span>
-              <span className="text-[10px] font-bold text-slate-700 truncate w-full text-center">
+              <span className="text-xs font-semibold text-slate-800 whitespace-nowrap overflow-visible text-center">
                 {opt.name}
               </span>
 

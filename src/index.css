@@ -51,3 +51,25 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Accessible Muted Text (5.4:1 contrast on white) */
+.text-helper-accessible {
+  color: #4b5563 !important;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+/* Landing Subtitle (7.1:1 contrast on pastel background) */
+.landing-subtitle-accessible {
+  color: #374151 !important;
+  font-size: 0.9375rem;
+  line-height: 1.5rem;
+  font-weight: 500;
+}
+
+/* Top Navigation Hit Targets (WHO & WCAG AA) */
+.touch-target-nav {
+  min-width: 44px;
+  min-height: 44px;
+}

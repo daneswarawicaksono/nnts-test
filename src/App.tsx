@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { WelcomeView } from './views/Welcome/WelcomeView';
 import { OnboardingView } from './views/Onboarding/OnboardingView';
+import { LoginView } from './views/Login/LoginView';
 import { ParentDashboard } from './views/Parent/ParentDashboard';
 import { CadreDashboard } from './views/Cadre/CadreDashboard';
 import { DoctorDashboard } from './views/Doctor/DoctorDashboard';
@@ -12,7 +13,7 @@ import type { AuthSession } from './types/role';
 
 export function App() {
   const [isDevRoute, setIsDevRoute] = useState(false);
-  const [currentView, setCurrentView] = useState<'welcome' | 'onboarding' | 'game' | 'language'>('welcome');
+  const [currentView, setCurrentView] = useState<'welcome' | 'onboarding' | 'login' | 'game' | 'language'>('welcome');
   const [session, setSession] = useState<AuthSession | null>(null);
 
   useEffect(() => {
@@ -26,6 +27,8 @@ export function App() {
     const viewParam = searchParams.get('view');
     if (viewParam === 'onboarding') {
       setCurrentView('onboarding');
+    } else if (viewParam === 'login') {
+      setCurrentView('login');
     } else if (viewParam === 'game') {
       setCurrentView('game');
     } else if (viewParam === 'language') {
@@ -105,8 +108,14 @@ export function App() {
           ) : currentView === 'welcome' ? (
             <WelcomeView
               onStart={() => setCurrentView('onboarding')}
-              onLogin={() => setCurrentView('onboarding')}
+              onLogin={() => setCurrentView('login')}
               onExploreLanguage={() => setCurrentView('language')}
+            />
+          ) : currentView === 'login' ? (
+            <LoginView
+              onBack={() => setCurrentView('welcome')}
+              onRegister={() => setCurrentView('onboarding')}
+              onLoginSuccess={(newSession) => setSession(newSession)}
             />
           ) : (
             <OnboardingView

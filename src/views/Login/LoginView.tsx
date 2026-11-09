@@ -155,7 +155,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
         <div className="flex-1 text-center pr-11">
           <h2 className="text-base font-extrabold text-slate-900">Masuk Akun</h2>
-          <p className="text-[11px] text-[#475569]">Akses data posyandu Anda</p>
+          <p className="text-xs text-slate-600 font-medium">Akses data posyandu Anda</p>
         </div>
       </header>
 
@@ -207,7 +207,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
           <div className="space-y-2.5 animate-in fade-in duration-normal">
             <div className="text-xs font-bold text-slate-900 mb-1 flex items-center justify-between">
               <span>Profil Pengguna Terdaftar:</span>
-              <span className="text-[11px] text-[#475569] font-normal">Klik untuk memilih</span>
+              <span className="text-xs text-slate-600 font-medium">Klik untuk memilih</span>
             </div>
 
             <div className="space-y-2">
@@ -249,7 +249,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                         <div className="text-xs font-bold text-slate-900 truncate">
                           {prof.user.fullName}
                         </div>
-                        <div className="text-[11px] text-[#475569] truncate">
+                        <div className="text-xs text-slate-600 font-medium truncate">
                           {isParent
                             ? 'Balita: Anisa (30 Bulan)'
                             : isCadre
@@ -261,7 +261,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
                     <div className="shrink-0 flex items-center gap-1.5 ml-2">
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
                           isParent
                             ? 'bg-amber-100 text-amber-800'
                             : isCadre

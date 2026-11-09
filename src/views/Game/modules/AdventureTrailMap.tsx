@@ -143,10 +143,13 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
       {/* MAP TOP BAR */}
       <header className="px-5 pt-4 sm:pt-7 pb-2.5 flex items-center justify-between z-20 shrink-0 bg-white/70 backdrop-blur-md border-b border-slate-200/80">
         <button
+          type="button"
           onClick={onExit}
-          className="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+          className="min-h-[44px] min-w-[44px] px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 flex items-center gap-1 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer active:scale-95"
+          aria-label="Keluar ke menu utama"
         >
-          <ChevronLeft className="w-4 h-4" /> Keluar
+          <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
+          <span>Keluar</span>
         </button>
 
         <div className="text-center">

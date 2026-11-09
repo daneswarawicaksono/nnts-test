@@ -175,7 +175,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
         <button
           type="button"
           onClick={handleBack}
-          className="w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors shadow-subtle shrink-0"
+          className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors shadow-subtle shrink-0 cursor-pointer active:scale-95"
           aria-label="Kembali"
         >
           <ChevronLeft className="w-5 h-5" />
@@ -183,7 +183,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
 
         <div className="flex-1 max-w-[240px]">
           <Stepper
-            steps={['Profil', 'Peran', 'Data Dasar']}
+            steps={['Profil', 'Peran', 'Anak']}
             currentStep={step}
           />
         </div>
@@ -397,7 +397,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                     onChange={(e) => setChildAgeMonths(Number(e.target.value))}
                     className="w-full accent-teal-700 cursor-pointer"
                   />
-                  <div className="flex justify-between text-[10px] text-slate-400">
+                  <div className="flex justify-between text-xs font-semibold text-[#4B5563] pt-1">
                     <span>12 Bulan</span>
                     <span>24-36 Bulan (Kritis)</span>
                     <span>59 Bulan</span>

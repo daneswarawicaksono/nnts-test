@@ -32,7 +32,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
             ref={ref}
             id={inputId}
             disabled={disabled}
-            className={`w-full rounded-md border bg-white text-slate-900 text-sm py-2.5 transition-colors duration-fast focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:bg-slate-50 disabled:text-slate-400 ${
+            className={`w-full rounded-md border bg-white text-slate-900 placeholder:text-slate-500 text-sm py-2.5 transition-colors duration-fast focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:bg-slate-50 disabled:text-slate-400 ${
               leftIcon ? 'pl-10' : 'pl-3.5'
             } pr-10 ${
               error
@@ -51,11 +51,11 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
         </div>
 
         {error ? (
-          <p className="text-[11px] font-semibold text-red-600 leading-tight flex items-center gap-1">
+          <p className="text-xs font-semibold text-red-600 leading-tight flex items-center gap-1">
             <span>{error}</span>
           </p>
         ) : helperText ? (
-          <p className="text-[11px] text-slate-500 leading-tight">{helperText}</p>
+          <p className="text-xs font-medium text-[#4B5563] leading-tight">{helperText}</p>
         ) : null}
       </div>
     );

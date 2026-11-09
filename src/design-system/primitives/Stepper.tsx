@@ -40,8 +40,8 @@ export const Stepper: React.FC<StepperProps> = ({
                 {isDone ? <Check className="w-4 h-4 stroke-[3]" /> : stepNumber}
               </button>
               <span
-                className={`text-[11px] font-semibold text-center leading-tight line-clamp-1 ${
-                  isActive ? 'text-slate-900 font-bold' : isDone ? 'text-slate-600' : 'text-slate-400'
+                className={`text-xs font-semibold text-center leading-tight whitespace-nowrap overflow-visible ${
+                  isActive ? 'text-slate-900 font-bold' : isDone ? 'text-slate-700' : 'text-[#4B5563]'
                 }`}
               >
                 {label}
