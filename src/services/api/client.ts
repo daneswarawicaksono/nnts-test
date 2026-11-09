@@ -1,3 +1,4 @@
+import { evaluateTriage } from '../cdss/inferenceEngine';
 import type { UserRole, AuthSession } from '../../types/role';
 
 // Demo valid verification codes for restricted roles
@@ -34,6 +35,14 @@ export interface ScreeningSubmissionPayload {
   goNoGoAccuracy: number; // %
   goNoGoCommissionErrors: number;
   memorySpanScore: number;
+  ageMonths?: number;
+  gender?: 'L' | 'P' | 'Male' | 'Female';
+  weightKg?: number;
+  heightCm?: number;
+  muacLilaCm?: number;
+  zWaz?: number;
+  zHaz?: number;
+  zWhz?: number;
 }
 
 export interface ScreeningEvaluationResponse {
@@ -44,6 +53,7 @@ export interface ScreeningEvaluationResponse {
   znRisk: number;
   b12Risk: number;
   summaryFeedback: string;
+  clinicalRationale?: string[];
 }
 
 class ApiClient {
@@ -125,30 +135,7 @@ class ApiClient {
 
   // Submit screening data to backend CDSS evaluation endpoint
   async submitScreeningSession(payload: ScreeningSubmissionPayload): Promise<ScreeningEvaluationResponse> {
-    await new Promise((r) => setTimeout(r, 350));
-    const avgRt = payload.reactionTimeTrials.reduce((a, b) => a + b, 0) / (payload.reactionTimeTrials.length || 1);
-
-    const isHighFeRisk = avgRt > 480;
-    const isHighZnRisk = payload.goNoGoCommissionErrors >= 2 || payload.goNoGoAccuracy < 75;
-    const isHighB12Risk = payload.memorySpanScore < 2;
-
-    const feRisk = isHighFeRisk ? 78 : 22;
-    const znRisk = isHighZnRisk ? 68 : 19;
-    const b12Risk = isHighB12Risk ? 65 : 18;
-
-    const tier = (feRisk > 70 || znRisk > 70) ? 'Tier-1 Alert' : (feRisk > 50 || znRisk > 50 || b12Risk > 50) ? 'Tier-2 Alert' : 'Normal';
-
-    return {
-      sessionId: `sc-${Date.now()}`,
-      evaluatedAt: new Date().toISOString(),
-      tier,
-      feRisk,
-      znRisk,
-      b12Risk,
-      summaryFeedback: tier === 'Normal' 
-        ? 'Tumbuh kembang motorik dan atensi si kecil sangat baik! Terus jaga asupan gizi seimbang.'
-        : 'Perlu sedikit dorongan gizi kaya zat besi dan seng pada menu makanan harian keluarga.',
-    };
+    return await evaluateTriage(payload);
   }
 }
 
