@@ -5,13 +5,14 @@ import { ParentDashboard } from './views/Parent/ParentDashboard';
 import { CadreDashboard } from './views/Cadre/CadreDashboard';
 import { DoctorDashboard } from './views/Doctor/DoctorDashboard';
 import { GameSessionContainer } from './views/Game/GameSessionContainer';
+import { LanguageLearningContainer } from './views/LanguageLearning/LanguageLearningContainer';
 import { ComponentShowcase } from './views/Dev/ComponentShowcase';
 import { api } from './services/api/client';
 import type { AuthSession } from './types/role';
 
 export function App() {
   const [isDevRoute, setIsDevRoute] = useState(false);
-  const [currentView, setCurrentView] = useState<'welcome' | 'onboarding' | 'game'>('welcome');
+  const [currentView, setCurrentView] = useState<'welcome' | 'onboarding' | 'game' | 'language'>('welcome');
   const [session, setSession] = useState<AuthSession | null>(null);
 
   useEffect(() => {
@@ -27,6 +28,8 @@ export function App() {
       setCurrentView('onboarding');
     } else if (viewParam === 'game') {
       setCurrentView('game');
+    } else if (viewParam === 'language') {
+      setCurrentView('language');
     }
 
     const roleParam = searchParams.get('role');
@@ -65,8 +68,8 @@ export function App() {
       <div
         className={
           isExpandedWorkstation
-            ? 'w-full max-w-6xl h-[100dvh] sm:h-[min(900px,96vh)] bg-white sm:rounded-3xl sm:shadow-2xl sm:border border-slate-200/90 overflow-hidden relative flex flex-col transition-all duration-normal'
-            : 'w-full sm:max-w-[400px] h-[100dvh] sm:h-[min(820px,94vh)] bg-white sm:rounded-[44px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 overflow-hidden relative flex flex-col transition-all duration-normal'
+            ? 'w-full h-[100dvh] bg-slate-50 overflow-hidden relative flex flex-col'
+            : 'w-full sm:max-w-[420px] h-[100dvh] sm:h-[min(860px,96vh)] bg-slate-50 overflow-hidden relative flex flex-col'
         }
       >
         {/* Dynamic Notch Pill on Desktop Frame (only shown on mobile-frame mode) */}
@@ -89,6 +92,8 @@ export function App() {
                 }
               }}
             />
+          ) : currentView === 'language' ? (
+            <LanguageLearningContainer onExit={() => setCurrentView('welcome')} />
           ) : session ? (
             session.user.role === 'parent' ? (
               <ParentDashboard session={session} onLogout={handleLogout} />
@@ -101,6 +106,7 @@ export function App() {
             <WelcomeView
               onStart={() => setCurrentView('onboarding')}
               onLogin={() => setCurrentView('onboarding')}
+              onExploreLanguage={() => setCurrentView('language')}
             />
           ) : (
             <OnboardingView

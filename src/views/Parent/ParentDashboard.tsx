@@ -11,6 +11,10 @@ import {
   Star,
   Utensils,
   Award,
+  Zap,
+  Apple,
+  Footprints,
+  Printer,
 } from 'lucide-react';
 import { GlassCard } from '../../design-system/primitives/GlassCard';
 import { Button } from '../../design-system/primitives/Button';
@@ -19,6 +23,8 @@ import { ProgressBar } from '../../design-system/primitives/ProgressBar';
 import { BottomSheet } from '../../design-system/primitives/BottomSheet';
 import { NutriSprout } from '../../design-system/mascot/NutriSprout';
 import { GameSessionContainer } from '../Game/GameSessionContainer';
+import { LanguageLearningContainer } from '../LanguageLearning/LanguageLearningContainer';
+import { PrintableKiaReportModal } from './components/PrintableKiaReportModal';
 import { soundSynth } from '../../services/audio/synth';
 import type { AuthSession } from '../../types/role';
 
@@ -128,9 +134,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
   const [newChildName, setNewChildName] = useState<string>('');
   const [newChildAge, setNewChildAge] = useState<number>(24);
   const [isGameActive, setIsGameActive] = useState<boolean>(false);
+  const [isLanguageActive, setIsLanguageActive] = useState<boolean>(false);
 
-  // Modals for family report & recipes
+  // Modals for family report, recipes, and printable KIA
   const [isFamilyReportOpen, setIsFamilyReportOpen] = useState<boolean>(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState<boolean>(false);
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeItem | null>(null);
   const [copiedShareLink, setCopiedShareLink] = useState<boolean>(false);
 
@@ -154,6 +162,13 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
     );
   }
 
+  if (isLanguageActive) {
+    return (
+      <LanguageLearningContainer
+        onExit={() => setIsLanguageActive(false)}
+      />
+    );
+  }
   const handleAddChild = () => {
     if (!newChildName.trim()) return;
     const newRecord: ChildItem = {
@@ -196,7 +211,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
   };
 
   return (
-    <div className="w-full h-full min-h-[100dvh] bg-gradient-to-b from-[#F0FDF4] via-[#F8FAFC] to-[#FFFBEB] flex flex-col justify-between font-sans select-none relative overflow-hidden">
+    <div className="w-full h-full min-h-[100dvh] bg-[#F8FAFC] flex flex-col justify-between font-sans select-none relative overflow-hidden">
       {/* TOP BAR / MULTI-PROFILE SELECTOR (OPSI INTEGRATED BAR) */}
       <header className="px-5 pt-5 pb-3 flex items-center justify-between z-10 shrink-0">
         {/* Child Profile Trigger */}
@@ -212,7 +227,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
             {activeChild.avatarEmoji}
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider leading-none">
+            <span className="text-xs text-slate-600 font-bold uppercase tracking-wider leading-none">
               Profil Anak
             </span>
             <span className="text-xs font-extrabold text-slate-900 leading-tight">
@@ -246,7 +261,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
             <GlassCard padding="lg" className="border-teal-200/80 bg-white/95 space-y-3.5">
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-[11px] font-bold text-teal-800 uppercase tracking-wide">
+                  <span className="text-xs font-bold text-teal-800 uppercase tracking-wide">
                     Pantauan Gizi Posyandu
                   </span>
                   <h2 className="text-xl font-extrabold text-slate-900 mt-0.5">
@@ -257,11 +272,9 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
               </div>
 
               {/* Status Badge */}
-              <div className="p-3 rounded-lg bg-teal-50 border border-teal-200/80 flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-bold text-teal-900">
-                  Status: {activeChild.status}
-                </span>
+              <div className="flex items-center gap-2 text-xs font-bold text-teal-900 py-0.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <span>Status: {activeChild.status}</span>
               </div>
 
               <div className="space-y-1.5">
@@ -296,74 +309,80 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
                     <Award className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-black text-slate-900">Rapor Gizi &amp; Tumbuh Kembang</h3>
-                    <p className="text-[10px] text-slate-500">{activeChild.name} • {activeChild.ageMonths} Bulan</p>
+                    <h3 className="text-sm font-black text-slate-900">Rapor Gizi &amp; Tumbuh Kembang</h3>
+                    <p className="text-xs text-slate-600 font-medium">{activeChild.name} • {activeChild.ageMonths} Bulan</p>
                   </div>
                 </div>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
                   Gizi Optimal
                 </span>
               </div>
 
               {/* 3 Domain Telemetry Rows */}
-              <div className="space-y-1.5">
+              <div className="space-y-2 divide-y divide-slate-100">
                 {/* Fe */}
-                <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🎈</span>
+                <div className="flex items-center justify-between pt-1 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center">
+                      <Zap className="w-4 h-4 fill-current" />
+                    </div>
                     <div>
-                      <div className="font-bold text-slate-900 text-[11px]">Kecekatan Motorik (Zat Besi)</div>
-                      <div className="text-[9px] text-slate-400">Refleks cepat (305 ms)</div>
+                      <div className="font-bold text-slate-900 text-xs">Kecekatan Motorik (Zat Besi)</div>
+                      <div className="text-xs text-slate-600 font-medium">Refleks cepat (305 ms)</div>
                     </div>
                   </div>
-                  <div className="flex gap-0.5 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
+                  <div className="flex gap-0.5 text-amber-500">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
                   </div>
                 </div>
 
                 {/* Zn */}
-                <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🍎</span>
+                <div className="flex items-center justify-between pt-2 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                      <Apple className="w-4 h-4 fill-current" />
+                    </div>
                     <div>
-                      <div className="font-bold text-slate-900 text-[11px]">Fokus &amp; Atensi (Seng)</div>
-                      <div className="text-[9px] text-slate-400">Paham memilah buah segar (85%)</div>
+                      <div className="font-bold text-slate-900 text-xs">Fokus &amp; Atensi (Seng)</div>
+                      <div className="text-xs text-slate-600 font-medium">Paham memilah buah segar (85%)</div>
                     </div>
                   </div>
-                  <div className="flex gap-0.5 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 text-slate-200" />
+                  <div className="flex gap-0.5 text-amber-500">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 text-slate-300" />
                   </div>
                 </div>
 
                 {/* B12 */}
-                <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🐰</span>
+                <div className="flex items-center justify-between pt-2 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+                      <Footprints className="w-4 h-4" />
+                    </div>
                     <div>
-                      <div className="font-bold text-slate-900 text-[11px]">Daya Ingat Spasial (B12)</div>
-                      <div className="text-[9px] text-slate-400">Ingat jejak terbalik (Skor 3)</div>
+                      <div className="font-bold text-slate-900 text-xs">Daya Ingat Spasial (B12)</div>
+                      <div className="text-xs text-slate-600 font-medium">Ingat jejak terbalik (Skor 3)</div>
                     </div>
                   </div>
-                  <div className="flex gap-0.5 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 text-slate-200" />
+                  <div className="flex gap-0.5 text-amber-500">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                    <Star className="w-3.5 h-3.5 text-slate-300" />
                   </div>
                 </div>
               </div>
 
               {/* Rekomendasi Menu Pangan Lokal Singkat */}
-              <div className="p-2.5 rounded-xl bg-teal-50/70 border border-teal-200 text-[11px] text-teal-900 flex items-start gap-2">
+              <div className="pt-2 border-t border-slate-100 text-xs text-teal-950 flex items-start gap-2">
                 <Utensils className="w-3.5 h-3.5 text-nutri-teal-700 shrink-0 mt-0.5" />
                 <p className="leading-snug">
                   <span className="font-bold">Saran Piring Gizi:</span> Berikan kombinasi hati ayam/telur dan bayam 3x sepekan untuk menjaga cadangan zat besi otak.
@@ -393,25 +412,38 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
                   {copiedShareLink ? 'Dibuka!' : 'Bagikan WA'}
                 </Button>
               </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                fullWidth
+                icon={<Printer className="w-3.5 h-3.5 text-teal-700" />}
+                onClick={() => {
+                  soundSynth.playPop();
+                  setIsPrintModalOpen(true);
+                }}
+                className="mt-1.5 text-xs font-bold text-slate-700"
+              >
+                Cetak Lembar Buku KIA (A5)
+              </Button>
             </GlassCard>
 
-            {/* Quick Insights Cards */}
+            {/* Quick Insights Summary (Flat Layout) */}
             <div className="grid grid-cols-2 gap-3">
-              <GlassCard padding="sm" className="space-y-1 bg-white/80">
-                <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+              <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center">
                   <TrendingUp className="w-4 h-4" />
                 </div>
                 <div className="text-xs font-bold text-slate-900">Zat Besi (Fe)</div>
-                <div className="text-[11px] text-emerald-600 font-bold">Cadangan Baik</div>
-              </GlassCard>
+                <div className="text-xs text-emerald-800 font-bold">Cadangan Baik</div>
+              </div>
 
-              <GlassCard padding="sm" className="space-y-1 bg-white/80">
-                <div className="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center">
+              <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
+                <div className="w-7 h-7 rounded-lg bg-teal-100 text-teal-800 flex items-center justify-center">
                   <Calendar className="w-4 h-4" />
                 </div>
                 <div className="text-xs font-bold text-slate-900">Jadwal Posyandu</div>
-                <div className="text-[11px] text-slate-600 font-medium">18 Nov 2026</div>
-              </GlassCard>
+                <div className="text-xs text-slate-700 font-medium">18 Nov 2026</div>
+              </div>
             </div>
           </div>
         )}
@@ -815,6 +847,32 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
           )}
         </div>
       </BottomSheet>
+
+      {/* MODAL PRINTABLE BUKU KIA A5 */}
+      <PrintableKiaReportModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        childData={{
+          name: activeChild.name,
+          ageMonths: activeChild.ageMonths,
+          gender: activeChild.gender,
+          parentName: session.user.fullName || 'Ibu Balita',
+          posyandu: 'Posyandu Melati 1',
+          faskesName: 'Puskesmas Tegalrejo',
+          screenedDate: '08 Nov 2026',
+          weightKg: 11.2,
+          heightCm: 86.5,
+          muacCm: 12.8,
+          waz: -0.4,
+          haz: -0.2,
+          whz: 0.1,
+          feStars: 5,
+          znStars: 4,
+          b12Stars: 4,
+          doctorRecommendation:
+            'Pertahankan asupan pangan hewani kaya zat besi dan seng. Berikan buah sumber vitamin C alami untuk meningkatkan penyerapan mikronutrien.',
+        }}
+      />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Check, ArrowRight, Play, Lock, ChevronLeft } from 'lucide-react';
+import { Star, Check, ArrowRight, Play, Lock, ChevronLeft, Zap, Apple, Footprints, Trophy } from 'lucide-react';
 import { NutriSprout } from '../../../design-system/mascot/NutriSprout';
 import { SpeechBubble } from '../../../design-system/primitives/SpeechBubble';
 import { Button } from '../../../design-system/primitives/Button';
@@ -22,7 +22,7 @@ interface IslandNode {
   title: string;
   subtitle: string;
   nutrient: string;
-  emoji: string;
+  icon: 'zap' | 'apple' | 'footprints' | 'trophy';
   colorScheme: {
     activeBg: string;
     activeBorder: string;
@@ -39,14 +39,14 @@ const ISLANDS: IslandNode[] = [
     title: 'Pulau Balon Kilat',
     subtitle: 'Uji Refleks Motorik Cepat',
     nutrient: 'Zat Besi (Fe)',
-    emoji: '🎈',
+    icon: 'zap',
     colorScheme: {
-      activeBg: 'bg-sky-500 text-white',
-      activeBorder: 'border-sky-400 ring-4 ring-sky-200',
-      activeShadow: 'shadow-lg shadow-sky-500/30',
+      activeBg: 'bg-sky-700 text-white',
+      activeBorder: 'border-sky-500 ring-4 ring-sky-200',
+      activeShadow: 'shadow-lg shadow-sky-800/30',
       completedBg: 'bg-sky-100 border-sky-300 text-sky-900',
-      lockedBg: 'bg-slate-100 border-slate-200 text-slate-400 opacity-60',
-      textColor: 'text-sky-700',
+      lockedBg: 'bg-slate-100 border-slate-200 text-slate-700',
+      textColor: 'text-sky-800',
     },
   },
   {
@@ -54,14 +54,14 @@ const ISLANDS: IslandNode[] = [
     title: 'Kebun Buah Ceria',
     subtitle: 'Pilah Buah Segar & Cermat',
     nutrient: 'Seng (Zn)',
-    emoji: '🍎',
+    icon: 'apple',
     colorScheme: {
-      activeBg: 'bg-amber-500 text-white',
+      activeBg: 'bg-amber-600 text-white',
       activeBorder: 'border-amber-400 ring-4 ring-amber-200',
-      activeShadow: 'shadow-lg shadow-amber-500/30',
+      activeShadow: 'shadow-lg shadow-amber-700/30',
       completedBg: 'bg-amber-100 border-amber-300 text-amber-900',
-      lockedBg: 'bg-slate-100 border-slate-200 text-slate-400 opacity-60',
-      textColor: 'text-amber-700',
+      lockedBg: 'bg-slate-100 border-slate-200 text-slate-700',
+      textColor: 'text-amber-800',
     },
   },
   {
@@ -69,14 +69,14 @@ const ISLANDS: IslandNode[] = [
     title: 'Lembah Jejak Hewan',
     subtitle: 'Ingat Urutan Langkah Terbalik',
     nutrient: 'Vitamin B12',
-    emoji: '🐰',
+    icon: 'footprints',
     colorScheme: {
-      activeBg: 'bg-purple-600 text-white',
-      activeBorder: 'border-purple-400 ring-4 ring-purple-200',
-      activeShadow: 'shadow-lg shadow-purple-500/30',
+      activeBg: 'bg-purple-700 text-white',
+      activeBorder: 'border-purple-500 ring-4 ring-purple-200',
+      activeShadow: 'shadow-lg shadow-purple-800/30',
       completedBg: 'bg-purple-100 border-purple-300 text-purple-900',
-      lockedBg: 'bg-slate-100 border-slate-200 text-slate-400 opacity-60',
-      textColor: 'text-purple-700',
+      lockedBg: 'bg-slate-100 border-slate-200 text-slate-700',
+      textColor: 'text-purple-800',
     },
   },
   {
@@ -84,13 +84,13 @@ const ISLANDS: IslandNode[] = [
     title: 'Puncak Bintang Emas',
     subtitle: 'Peti Hadiah & Hasil Analisis',
     nutrient: 'Selebrasi Nutrisi',
-    emoji: '🏆',
+    icon: 'trophy',
     colorScheme: {
       activeBg: 'bg-amber-400 text-amber-950',
       activeBorder: 'border-amber-300 ring-4 ring-amber-200',
       activeShadow: 'shadow-xl shadow-amber-400/40',
       completedBg: 'bg-amber-100 border-amber-400 text-amber-950',
-      lockedBg: 'bg-slate-100 border-slate-200 text-slate-400 opacity-60',
+      lockedBg: 'bg-slate-100 border-slate-200 text-slate-700',
       textColor: 'text-amber-800',
     },
   },
@@ -150,7 +150,7 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
         </button>
 
         <div className="text-center">
-          <span className="text-[10px] font-bold text-teal-800 uppercase tracking-widest block leading-none">
+          <span className="text-xs font-bold text-teal-800 uppercase tracking-widest block leading-none">
             Peta Petualangan
           </span>
           <span className="text-xs font-black text-slate-900 mt-0.5 block">
@@ -167,9 +167,9 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
 
       {/* MAP STAGE CANVAS (SCROLLABLE ADVENTURE PATH) */}
       <main className="flex-1 overflow-y-auto px-5 py-4 z-10 relative flex flex-col justify-between">
-        {/* Timi Mascot Header Banner */}
-        <div className="w-full max-w-xs mx-auto flex items-center gap-3 bg-white/85 backdrop-blur-sm border border-teal-200/90 rounded-2xl p-3 shadow-subtle mb-4">
-          <div className="shrink-0 animate-bounce-gentle">
+        {/* Timi Mascot Header Guidance (Natural trail layout without nested card) */}
+        <div className="w-full max-w-xs mx-auto flex items-center gap-3 mb-4">
+          <div className="shrink-0 animate-float-breath">
             <NutriSprout size={56} mood={currentActiveStage === 4 ? 'curious' : 'happy'} showShadow={false} />
           </div>
           <div className="text-left flex-1">
@@ -225,27 +225,30 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
                       : `${island.colorScheme.lockedBg} cursor-not-allowed`
                   }`}
                 >
-                  {/* Island Circular Icon */}
+                  {/* Island Circular Icon (Clean SVG) */}
                   <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl shadow-xs transition-transform ${
-                      isActive ? 'bg-white/20 scale-110' : completed ? 'bg-white' : 'bg-slate-200'
+                    className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-xs transition-transform ${
+                      isActive ? 'bg-white/20 scale-110 text-white' : completed ? 'bg-white text-slate-800' : 'bg-slate-200 text-slate-400'
                     }`}
                   >
-                    <span>{island.emoji}</span>
+                    {island.icon === 'zap' && <Zap className="w-6 h-6 fill-current" />}
+                    {island.icon === 'apple' && <Apple className="w-6 h-6 fill-current" />}
+                    {island.icon === 'footprints' && <Footprints className="w-6 h-6" />}
+                    {island.icon === 'trophy' && <Trophy className="w-6 h-6 fill-current" />}
                   </div>
 
                   {/* Island Details */}
                   <div className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`text-[10px] font-black uppercase tracking-wider ${
-                          isActive ? 'text-white/80' : 'text-slate-500'
+                        className={`text-xs font-black uppercase tracking-wider ${
+                          isActive ? 'text-white' : 'text-slate-600'
                         }`}
                       >
                         Tahap {island.id}
                       </span>
                       {completed && (
-                        <span className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black">
+                        <span className="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-black">
                           <Check className="w-2.5 h-2.5 stroke-[3]" />
                         </span>
                       )}
@@ -260,8 +263,8 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
                     </h3>
 
                     <p
-                      className={`text-[10px] truncate mt-0.5 ${
-                        isActive ? 'text-white/90 font-medium' : 'text-slate-500'
+                      className={`text-xs truncate mt-0.5 ${
+                        isActive ? 'text-white/90 font-medium' : 'text-slate-600'
                       }`}
                     >
                       {island.subtitle}
@@ -273,7 +276,7 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
                     {completed ? (
                       <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
                     ) : isActive ? (
-                      <div className="w-7 h-7 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-md animate-pulse">
+                      <div className="w-7 h-7 rounded-full bg-white text-slate-900 flex items-center justify-center shadow-md">
                         <Play className="w-3.5 h-3.5 fill-slate-900 ml-0.5" />
                       </div>
                     ) : (

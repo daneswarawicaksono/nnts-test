@@ -16,9 +16,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   const clampedValue = Math.min(100, Math.max(0, value));
 
   const variantFills = {
-    teal: 'bg-gradient-to-r from-nutri-teal-500 to-nutri-teal-700',
-    orange: 'bg-gradient-to-r from-nutri-orange-400 to-nutri-orange-600',
-    emerald: 'bg-gradient-to-r from-emerald-400 to-emerald-600',
+    teal: 'bg-nutri-teal-700',
+    orange: 'bg-nutri-orange-500',
+    emerald: 'bg-emerald-600',
   };
 
   return (

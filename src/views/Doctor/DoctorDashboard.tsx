@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { GlassCard } from '../../design-system/primitives/GlassCard';
 import { Button } from '../../design-system/primitives/Button';
+import { CognitiveRadarChart } from './components/CognitiveRadarChart';
 import { soundSynth } from '../../services/audio/synth';
 import type { AuthSession } from '../../types/role';
 
@@ -310,10 +311,10 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-black text-nutri-teal-700 uppercase tracking-wider">
+              <span className="text-xs font-black text-nutri-teal-700 uppercase tracking-wider">
                 CDSS Faskes Tingkat Pertama
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
                 {session.user.faskesId || 'Puskesmas Tegalrejo'}
               </span>
             </div>
@@ -326,33 +327,33 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
         <div className="flex items-center gap-2">
           {/* Quick Preset Scenarios Button */}
           <div className="hidden sm:flex items-center gap-1.5 mr-2">
-            <span className="text-[11px] font-semibold text-slate-400">Simulasi:</span>
+            <span className="text-xs font-semibold text-slate-600">Simulasi:</span>
             <button
               onClick={() => handleSelectPatient(PRESET_PATIENTS[0])}
-              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors ${
+              className={`text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-colors ${
                 selectedPatientId === PRESET_PATIENTS[0].id
-                  ? 'bg-rose-50 border-rose-300 text-rose-700'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  ? 'bg-rose-50 border-rose-300 text-rose-800'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
               }`}
             >
               Kasus 1: Defisiensi Fe
             </button>
             <button
               onClick={() => handleSelectPatient(PRESET_PATIENTS[1])}
-              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors ${
+              className={`text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-colors ${
                 selectedPatientId === PRESET_PATIENTS[1].id
-                  ? 'bg-amber-50 border-amber-300 text-amber-700'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  ? 'bg-amber-50 border-amber-300 text-amber-900'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
               }`}
             >
               Kasus 2: Inhibisi Zn
             </button>
             <button
               onClick={() => handleSelectPatient(PRESET_PATIENTS[2])}
-              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors ${
+              className={`text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-colors ${
                 selectedPatientId === PRESET_PATIENTS[2].id
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
               }`}
             >
               Kasus 3: Normal
@@ -386,26 +387,28 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                 placeholder="Cari balita, ID, atau posyandu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-600 font-sans"
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 bg-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-600 font-sans"
               />
             </div>
 
             {/* Tier Filter Buttons */}
             <div className="grid grid-cols-4 gap-1">
-              {[
-                { id: 'all', label: 'Semua' },
-                { id: 'Tier-1', label: 'Tier-1 (Merah)' },
-                { id: 'Tier-2', label: 'Tier-2 (Kuning)' },
-                { id: 'Normal', label: 'Normal' },
-              ].map((t) => (
+              {(
+                [
+                  { id: 'all', label: 'Semua' },
+                  { id: 'Tier-1', label: 'Tier-1 (Merah)' },
+                  { id: 'Tier-2', label: 'Tier-2 (Kuning)' },
+                  { id: 'Normal', label: 'Normal' },
+                ] as const
+              ).map((t) => (
                 <button
                   key={t.id}
                   type="button"
-                  onClick={() => setTierFilter(t.id as any)}
-                  className={`py-1.5 px-1 rounded-lg text-[10px] font-bold text-center transition-all ${
+                  onClick={() => setTierFilter(t.id)}
+                  className={`py-1.5 px-1 rounded-lg text-xs font-bold text-center transition-all ${
                     tierFilter === t.id
                       ? 'bg-nutri-teal-700 text-white shadow-xs'
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   {t.label}
@@ -416,9 +419,9 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
 
           {/* Patient Cards List */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 px-1">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-1">
               <span>Antrean Rujukan ({filteredPatients.length})</span>
-              <span className="text-[10px] font-semibold text-slate-400">Urut: Prioritas Risiko</span>
+              <span className="text-xs font-semibold text-slate-600">Urut: Prioritas Risiko</span>
             </div>
 
             {filteredPatients.map((p) => {
@@ -439,12 +442,12 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="text-xs font-black text-slate-900">{p.childName}</div>
-                      <div className="text-[11px] text-slate-500 font-medium">
+                      <div className="text-xs text-slate-600 font-medium">
                         {p.ageMonths} bln • {p.gender === 'L' ? 'Laki-laki' : 'Perempuan'} • {p.posyandu}
                       </div>
                     </div>
                     <span
-                      className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                      className={`text-xs font-extrabold px-2 py-0.5 rounded-full ${
                         isTier1
                           ? 'bg-rose-100 text-rose-800'
                           : isTier2
@@ -456,22 +459,22 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                     </span>
                   </div>
 
-                  <div className="mt-2.5 pt-2 border-t border-slate-100 grid grid-cols-3 gap-1 text-[10px] text-center">
+                  <div className="mt-2.5 pt-2 border-t border-slate-100 grid grid-cols-3 gap-1 text-xs text-center">
                     <div className="bg-slate-50 py-1 rounded-lg">
-                      <span className="text-slate-400 block text-[9px]">Latensi RT</span>
-                      <span className={`font-bold ${isTier1 ? 'text-rose-600' : 'text-slate-800'}`}>
+                      <span className="text-slate-600 block text-xs font-bold">Latensi RT</span>
+                      <span className={`font-mono font-bold ${isTier1 ? 'text-rose-700' : 'text-slate-900'}`}>
                         {p.latencyMs} ms
                       </span>
                     </div>
                     <div className="bg-slate-50 py-1 rounded-lg">
-                      <span className="text-slate-400 block text-[9px]">Akurasi Go/No</span>
-                      <span className={`font-bold ${p.accuracyRate < 70 ? 'text-amber-600' : 'text-slate-800'}`}>
+                      <span className="text-slate-600 block text-xs font-bold">Akurasi Go/No</span>
+                      <span className={`font-mono font-bold ${p.accuracyRate < 70 ? 'text-amber-800' : 'text-slate-900'}`}>
                         {p.accuracyRate}%
                       </span>
                     </div>
                     <div className="bg-slate-50 py-1 rounded-lg">
-                      <span className="text-slate-400 block text-[9px]">LiLA</span>
-                      <span className={`font-bold ${p.muacCm < 11.5 ? 'text-rose-600' : 'text-slate-800'}`}>
+                      <span className="text-slate-600 block text-xs font-bold">LiLA</span>
+                      <span className={`font-mono font-bold ${p.muacCm < 11.5 ? 'text-rose-700' : 'text-slate-900'}`}>
                         {p.muacCm} cm
                       </span>
                     </div>
@@ -503,9 +506,9 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
           <div className="p-4 sm:p-5 bg-white border-b border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-slate-400">{activePatient.id}</span>
+                <span className="text-xs font-black text-slate-700">{activePatient.id}</span>
                 <span
-                  className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
+                  className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
                     activePatient.tier.includes('Tier-1')
                       ? 'bg-rose-100 text-rose-800 border border-rose-300'
                       : activePatient.tier.includes('Tier-2')
@@ -516,15 +519,15 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                   {activePatient.tier}
                 </span>
                 {activePatient.interventionSaved && (
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Intervensi Tersimpan
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-200">
+                    <Check className="w-3.5 h-3.5 text-emerald-700" /> Intervensi Tersimpan
                   </span>
                 )}
               </div>
               <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 mt-0.5">
                 {activePatient.childName}
               </h2>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
+              <p className="text-xs text-slate-600 font-medium mt-0.5">
                 Usia {activePatient.ageMonths} Bulan • {activePatient.gender === 'L' ? 'Laki-laki' : 'Perempuan'} • Wilayah {activePatient.posyandu} ({activePatient.rw})
               </p>
             </div>
@@ -588,9 +591,9 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                   {/* Zat Besi (Fe) Card */}
                   <GlassCard padding="md" className="space-y-2 bg-white border-slate-200 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-500">Zat Besi (Fe)</span>
+                      <span className="text-xs font-bold text-slate-700">Zat Besi (Fe)</span>
                       <span
-                        className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                        className={`text-xs font-black px-2 py-0.5 rounded-full ${
                           activePatient.latencyMs > 480
                             ? 'bg-rose-100 text-rose-800'
                             : activePatient.latencyMs > 400
@@ -601,8 +604,8 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                         {activePatient.latencyMs > 480 ? 'Risiko Tinggi' : activePatient.latencyMs > 400 ? 'Waspada' : 'Optimal'}
                       </span>
                     </div>
-                    <div className="text-2xl font-black text-slate-900">{activePatient.latencyMs} <span className="text-xs font-semibold text-slate-500">ms</span></div>
-                    <p className="text-[11px] text-slate-600 leading-snug">
+                    <div className="text-2xl font-black text-slate-900 font-mono">{activePatient.latencyMs} <span className="text-xs font-semibold text-slate-600">ms</span></div>
+                    <p className="text-xs text-slate-700 leading-snug">
                       Marker transmisi dopaminergik basal striatum. Rata-rata 5 ronde Balon Kilat.
                     </p>
                   </GlassCard>
@@ -610,9 +613,9 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                   {/* Seng (Zn) Card */}
                   <GlassCard padding="md" className="space-y-2 bg-white border-slate-200 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-500">Seng (Zn)</span>
+                      <span className="text-xs font-bold text-slate-700">Seng (Zn)</span>
                       <span
-                        className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                        className={`text-xs font-black px-2 py-0.5 rounded-full ${
                           activePatient.accuracyRate < 65
                             ? 'bg-rose-100 text-rose-800'
                             : activePatient.accuracyRate < 80
@@ -623,8 +626,8 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                         {activePatient.accuracyRate < 65 ? 'Risiko Tinggi' : activePatient.accuracyRate < 80 ? 'Waspada' : 'Optimal'}
                       </span>
                     </div>
-                    <div className="text-2xl font-black text-slate-900">{activePatient.accuracyRate}%</div>
-                    <p className="text-[11px] text-slate-600 leading-snug">
+                    <div className="text-2xl font-black text-slate-900 font-mono">{activePatient.accuracyRate}%</div>
+                    <p className="text-xs text-slate-700 leading-snug">
                       Inhibisi prefrontal cortex (Go/No-Go). {activePatient.commissionErrors} kali salah sentuh buah berulat.
                     </p>
                   </GlassCard>
@@ -632,9 +635,9 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                   {/* Vitamin B12 Card */}
                   <GlassCard padding="md" className="space-y-2 bg-white border-slate-200 shadow-xs">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-slate-500">Vitamin B12</span>
+                      <span className="text-xs font-bold text-slate-700">Vitamin B12</span>
                       <span
-                        className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                        className={`text-xs font-black px-2 py-0.5 rounded-full ${
                           activePatient.memorySpan < 2
                             ? 'bg-rose-100 text-rose-800'
                             : activePatient.memorySpan === 2
@@ -645,12 +648,24 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                         {activePatient.memorySpan < 2 ? 'Defisit' : activePatient.memorySpan === 2 ? 'Cukup' : 'Tinggi'}
                       </span>
                     </div>
-                    <div className="text-2xl font-black text-slate-900">Skor {activePatient.memorySpan} <span className="text-xs font-semibold text-slate-500">span</span></div>
-                    <p className="text-[11px] text-slate-600 leading-snug">
+                    <div className="text-2xl font-black text-slate-900 font-mono">Skor {activePatient.memorySpan} <span className="text-xs font-semibold text-slate-600">span</span></div>
+                    <p className="text-xs text-slate-700 leading-snug">
                       Kapasitas memori kerja spasial urutan terbalik balita (Jejak Hewan).
                     </p>
                   </GlassCard>
                 </div>
+
+                {/* Interactive Cognitive Radar Chart (Tri-Axial Fe, Zn, B12) */}
+                <CognitiveRadarChart
+                  data={{
+                    ironScore: Math.round(Math.max(30, Math.min(100, 100 - (activePatient.latencyMs - 250) * 0.18))),
+                    ironLatencyMs: activePatient.latencyMs,
+                    zincScore: activePatient.accuracyRate,
+                    zincErrors: activePatient.commissionErrors,
+                    b12Score: Math.round((activePatient.memorySpan / 4) * 100),
+                    b12Span: activePatient.memorySpan,
+                  }}
+                />
 
                 {/* Rasional Inferensi CDSS */}
                 <GlassCard padding="md" className="space-y-2.5 bg-teal-50/60 border-teal-200/80">
@@ -660,7 +675,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                       Rekomendasi Algoritma Triase CDSS (Model Terpadu):
                     </h3>
                   </div>
-                  <p className="text-xs text-slate-700 leading-relaxed">
+                  <p className="text-xs text-slate-700 leading-relaxed max-w-prose">
                     {activePatient.tier.includes('Tier-1')
                       ? 'Kombinasi latensi respon memanjang (>480ms) dan LiLA < 11.5 cm mengindikasikan defisiensi mikronutrien akut pada jaringan otak sebelum terdeteksi pada indeks berat badan saja. Prioritaskan konfirmasi lab ferritin dan suplementasi mikronutrien terarah.'
                       : activePatient.tier.includes('Tier-2')
@@ -685,15 +700,15 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                   }`}
                 >
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider">Lingkar Lengan Atas (LiLA):</span>
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-700">Lingkar Lengan Atas (LiLA):</span>
                     <div className="text-xl font-black">{activePatient.muacCm} cm</div>
                   </div>
                   <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-white shadow-xs">
                     {activePatient.muacCm < 11.5
-                      ? 'Pita Merah (<11.5 cm) — Gizi Buruk Akut'
+                      ? 'Pita Merah (<11.5 cm) : Gizi Buruk Akut'
                       : activePatient.muacCm <= 12.5
-                      ? 'Pita Kuning (11.5–12.5 cm) — Waspada'
-                      : 'Pita Hijau (>12.5 cm) — Normal'}
+                      ? 'Pita Kuning (11.5-12.5 cm) : Waspada'
+                      : 'Pita Hijau (>12.5 cm) : Normal'}
                   </span>
                 </div>
 
@@ -809,7 +824,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
                   <h3 className="text-sm font-extrabold text-slate-900">
                     Interoperabilitas SATUSEHAT FHIR R4 Bundle
                   </h3>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-600">
                     Format payload standar Kemenkes RI untuk integrasi e-Puskesmas
                   </p>
                 </div>
@@ -822,7 +837,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
               </button>
             </div>
 
-            <div className="p-4 flex-1 overflow-y-auto bg-slate-900 text-slate-100 font-mono text-[11px] leading-relaxed">
+            <div className="p-4 flex-1 overflow-y-auto bg-slate-900 text-slate-100 font-mono text-xs leading-relaxed">
               <pre>{JSON.stringify(fhirBundlePayload, null, 2)}</pre>
             </div>
 

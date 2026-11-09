@@ -116,11 +116,32 @@ class ApiClient {
   getToken(): string | null {
     return this.sessionToken;
   }
-
   logout() {
     this.currentSession = null;
     this.sessionToken = null;
     sessionStorage.removeItem('nnts_session');
+  }
+
+  getSavedProfiles(): AuthSession[] {
+    try {
+      const raw = localStorage.getItem('nnts_saved_profiles');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  loginSession(session: AuthSession): void {
+    this.currentSession = session;
+    this.sessionToken = session.token;
+    try {
+      sessionStorage.setItem('nnts_session', JSON.stringify(session));
+      const profiles = this.getSavedProfiles();
+      const updated = [session, ...profiles.filter((p) => p.user.id !== session.user.id)].slice(0, 5);
+      localStorage.setItem('nnts_saved_profiles', JSON.stringify(updated));
+    } catch {
+      // ignore storage error
+    }
   }
 
   // Submit screening data to backend CDSS evaluation endpoint

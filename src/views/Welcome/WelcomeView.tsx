@@ -6,9 +6,10 @@ import { soundSynth } from '../../services/audio/synth';
 export interface WelcomeViewProps {
   onStart: () => void;
   onLogin: () => void;
+  onExploreLanguage?: () => void;
 }
 
-export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart, onLogin }) => {
+export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart, onLogin, onExploreLanguage }) => {
   const [mascotMood, setMascotMood] = useState<NutriSproutMood>('calm');
 
   const handleMascotClick = () => {
@@ -59,8 +60,8 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart, onLogin }) =>
         </h1>
 
         {/* 1 Kalimat Penjelas Saja */}
-        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-[270px]">
-          Pantau tumbuh kembang dan penuhi gizi terbaik buah hati dengan mudah bersama Posyandu.
+        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-[270px] text-pretty">
+          Pantau tumbuh kembang dan penuhi gizi terbaik buah hati dengan mudah bersama&nbsp;Posyandu.
         </p>
       </main>
 
@@ -77,6 +78,20 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart, onLogin }) =>
           Mulai
         </Button>
 
+        {onExploreLanguage && (
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
+            onClick={() => {
+              soundSynth.playChime();
+              onExploreLanguage();
+            }}
+            className="text-xs font-bold text-slate-700"
+          >
+            Petualangan Bahasa Cakra →
+          </Button>
+        )}
         {/* 1 Link Sekunder: Sudah punya akun? Masuk */}
         <div className="text-xs text-slate-600 flex items-center justify-center gap-1.5 pt-0.5">
           <span>Sudah punya akun?</span>

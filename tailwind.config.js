@@ -32,6 +32,16 @@ export default {
             700: '#C2410C',
           },
         },
+        triage: {
+          danger: '#EF4444',
+          warning: '#F59E0B',
+          success: '#10B981',
+        },
+        lila: {
+          red: '#DC2626',
+          yellow: '#D97706',
+          green: '#059669',
+        },
         slate: {
           900: '#0F172A',
           600: '#475569',
@@ -42,7 +52,9 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Figtree', 'system-ui', '-apple-system', 'sans-serif'],
+        child: ['Nunito', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       borderRadius: {
         'sm': '8px',
@@ -59,7 +71,7 @@ export default {
         'btn-warm': '0 8px 24px -4px rgba(249, 115, 22, 0.35)',
       },
       transitionTimingFunction: {
-        'spring-overshoot': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'spring-overshoot': 'cubic-bezier(0.22, 1, 0.36, 1)',
         'spring-smooth': 'cubic-bezier(0.16, 1, 0.3, 1)',
       },
       transitionDuration: {

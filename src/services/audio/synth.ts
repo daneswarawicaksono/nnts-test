@@ -63,6 +63,30 @@ class SoundSynth {
       osc.stop(noteTime + 0.4);
     });
   }
+
+  playCelebrate() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    // Triumphant C5, G5, C6 arpeggio
+    [523.25, 783.99, 1046.5].forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const noteTime = now + idx * 0.08;
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, noteTime);
+
+      gain.gain.setValueAtTime(0.18, noteTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.5);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(noteTime);
+      osc.stop(noteTime + 0.5);
+    });
+  }
 }
 
 export const soundSynth = new SoundSynth();
