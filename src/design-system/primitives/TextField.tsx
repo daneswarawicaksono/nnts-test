@@ -51,11 +51,11 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
         </div>
 
         {error ? (
-          <p className="text-xs font-semibold text-red-600 leading-tight flex items-center gap-1">
+          <p className="text-xs font-semibold text-red-600 leading-normal flex items-center gap-1">
             <span>{error}</span>
           </p>
         ) : helperText ? (
-          <p className="text-xs font-medium text-[#4B5563] leading-tight">{helperText}</p>
+          <p className="text-xs font-medium text-[#4B5563] leading-normal">{helperText}</p>
         ) : null}
       </div>
     );

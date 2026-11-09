@@ -25,6 +25,7 @@ import { NutriSprout } from '../../design-system/mascot/NutriSprout';
 import { GameSessionContainer } from '../Game/GameSessionContainer';
 import { PrintableKiaReportModal } from './components/PrintableKiaReportModal';
 import { soundSynth } from '../../services/audio/synth';
+import { filterNameInput, validateName } from '../../utils/formValidation';
 import type { AuthSession } from '../../types/role';
 
 export interface ChildItem {
@@ -161,7 +162,11 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
   }
 
   const handleAddChild = () => {
-    if (!newChildName.trim()) return;
+    const val = validateName(newChildName);
+    if (!val.valid) {
+      alert(val.error || 'Nama balita minimal 2 huruf dan tidak boleh mengandung angka.');
+      return;
+    }
     const newRecord: ChildItem = {
       id: `c-${Date.now()}`,
       name: newChildName.trim(),
@@ -802,9 +807,10 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
                 type="text"
                 placeholder="Nama Balita"
                 value={newChildName}
-                onChange={(e) => setNewChildName(e.target.value)}
+                onChange={(e) => setNewChildName(filterNameInput(e.target.value))}
                 className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white"
               />
+              <span className="text-[10px] text-slate-500 block">Hanya huruf dan spasi (tanpa angka).</span>
               <div className="flex items-center justify-between text-xs">
                 <span>Usia: {newChildAge} Bulan</span>
                 <input

@@ -9,6 +9,7 @@ import { SpeechBubble } from '../../design-system/primitives/SpeechBubble';
 import { NutriSprout, type NutriSproutMood } from '../../design-system/mascot/NutriSprout';
 import { soundSynth } from '../../services/audio/synth';
 import { api, type RegisterPayload } from '../../services/api/client';
+import { filterNameInput, filterInvitationCode, filterDigitsOnly } from '../../utils/formValidation';
 import type { UserRole, AuthSession } from '../../types/role';
 
 export interface OnboardingViewProps {
@@ -204,8 +205,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
               label="Nama Lengkap Anda"
               placeholder="Contoh: Ibu Siti Rahma"
               value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              helperText="Gunakan nama yang mudah dikenali kader atau dokter."
+              onChange={(e) => setFullName(filterNameInput(e.target.value))}
+              helperText="Gunakan nama yang mudah dikenali kader atau dokter (hanya huruf dan spasi)."
               error={fullName.length > 0 && fullName.length < 2 ? 'Nama minimal 2 huruf' : undefined}
               success={fullName.length >= 2}
             />
@@ -322,11 +323,10 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                   placeholder={selectedRole === 'cadre' ? 'Contoh: POSYANDU-2026' : 'Contoh: DOKTER-2026'}
                   value={inviteCode}
                   onChange={(e) => {
-                    const val = e.target.value.toUpperCase();
+                    const val = filterInvitationCode(e.target.value);
                     setInviteCode(val);
                     handleVerifyCode(val, selectedRole);
                   }}
-                  error={codeError}
                   success={Boolean(codeSuccess)}
                   helperText={
                     codeSuccess
@@ -351,7 +351,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                   label="Nama Panggilan Balita"
                   placeholder="Contoh: Anisa"
                   value={childName}
-                  onChange={(e) => setChildName(e.target.value)}
+                  onChange={(e) => setChildName(filterNameInput(e.target.value))}
+                  helperText="Hanya huruf dan spasi, tanpa angka."
                   error={childName.length > 0 && childName.length < 2 ? 'Minimal 2 huruf' : undefined}
                   success={childName.length >= 2}
                 />
@@ -368,7 +369,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                           : 'bg-white border-slate-200 text-slate-700'
                       }`}
                     >
-                      Laki-laki 👦
+                      Laki-laki
                     </button>
                     <button
                       type="button"
@@ -379,7 +380,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                           : 'bg-white border-slate-200 text-slate-700'
                       }`}
                     >
-                      Perempuan 👧
+                      Perempuan
                     </button>
                   </div>
                 </div>
@@ -435,8 +436,9 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                   label="Nomor Induk Pegawai (NIP / SIP)"
                   placeholder="Contoh: 198902142015031002"
                   value={doctorNip}
-                  onChange={(e) => setDoctorNip(e.target.value)}
-                  error={doctorNip.length > 0 && doctorNip.length < 5 ? 'Minimal 5 karakter' : undefined}
+                  onChange={(e) => setDoctorNip(filterDigitsOnly(e.target.value))}
+                  helperText="Hanya digit angka (tanpa huruf/simbol)."
+                  error={doctorNip.length > 0 && doctorNip.length < 5 ? 'Minimal 5 digit angka' : undefined}
                   success={doctorNip.length >= 5}
                 />
               </>

@@ -6,6 +6,7 @@ import { Button } from '../../design-system/primitives/Button';
 import { TextField } from '../../design-system/primitives/TextField';
 import { soundSynth } from '../../services/audio/synth';
 import { api } from '../../services/api/client';
+import { filterNameInput, filterInvitationCode } from '../../utils/formValidation';
 import type { AuthSession, UserRole } from '../../types/role';
 
 export interface LoginViewProps {
@@ -291,8 +292,9 @@ export const LoginView: React.FC<LoginViewProps> = ({
               label="Nama Lengkap"
               placeholder="Contoh: Ibu Siti Rahma"
               value={manualName}
-              onChange={(e) => setManualName(e.target.value)}
-              helperText="Masukkan nama sesuai akun yang terdaftar."
+              onChange={(e) => setManualName(filterNameInput(e.target.value))}
+              helperText="Hanya huruf dan spasi (tanpa angka)."
+              error={manualName.length > 0 && manualName.length < 2 ? 'Minimal 2 huruf' : undefined}
               required
             />
 
@@ -321,7 +323,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 label="Kode Undangan Faskes"
                 placeholder={manualRole === 'cadre' ? 'POSYANDU-2026' : 'DOKTER-2026'}
                 value={manualCode}
-                onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+                onChange={(e) => setManualCode(filterInvitationCode(e.target.value))}
                 error={codeError}
                 helperText="Gunakan kode resmi dari instansi kesehatan."
                 leftIcon={<ShieldCheck className="w-4 h-4" />}

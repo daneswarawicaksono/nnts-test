@@ -16,6 +16,7 @@ import { StreakBadge } from '../../design-system/primitives/StreakBadge';
 import { ProgressBar } from '../../design-system/primitives/ProgressBar';
 import { WhoMuacTapeMeter } from './components/WhoMuacTapeMeter';
 import { soundSynth } from '../../services/audio/synth';
+import { filterNameInput, filterPositiveDecimal, validateName } from '../../utils/formValidation';
 import type { AuthSession } from '../../types/role';
 
 export interface CadreDashboardProps {
@@ -182,11 +183,16 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
   };
 
   const handleRegisterNewChild = () => {
-    if (!newName.trim() || !newParentName.trim()) {
-      alert('Nama balita dan nama orang tua wajib diisi.');
+    const valBalita = validateName(newName);
+    if (!valBalita.valid) {
+      alert(valBalita.error || 'Nama balita tidak valid (hanya huruf dan spasi, tanpa angka).');
       return;
     }
-    soundSynth.playChime();
+    const valOrtu = validateName(newParentName);
+    if (!valOrtu.valid) {
+      alert(valOrtu.error || 'Nama orang tua tidak valid (hanya huruf dan spasi, tanpa angka).');
+      return;
+    }
     const newRecord: ToddlerRecord = {
       id: `T-0${toddlers.length + 1}`,
       name: newName.trim(),
@@ -454,7 +460,7 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                     type="number"
                     step="0.1"
                     value={measureWeight}
-                    onChange={(e) => setMeasureWeight(e.target.value)}
+                    onChange={(e) => setMeasureWeight(filterPositiveDecimal(e.target.value))}
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600"
                   />
                 </div>
@@ -466,12 +472,11 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                     type="number"
                     step="0.5"
                     value={measureHeight}
-                    onChange={(e) => setMeasureHeight(e.target.value)}
+                    onChange={(e) => setMeasureHeight(filterPositiveDecimal(e.target.value))}
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600"
                   />
                 </div>
               </div>
-
               {/* Physical Markers Checklist */}
               <div className="space-y-2 pt-2 border-t border-slate-100">
                 <span className="text-xs font-bold text-slate-800 block">Tanda Fisik Klinis:</span>
@@ -543,7 +548,7 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                   type="text"
                   placeholder="contoh: Muhammad Alif"
                   value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  onChange={(e) => setNewName(filterNameInput(e.target.value))}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600"
                 />
               </div>
@@ -602,12 +607,12 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                   type="text"
                   placeholder="contoh: Ibu Nurjanah"
                   value={newParentName}
-                  onChange={(e) => setNewParentName(e.target.value)}
+                  onChange={(e) => setNewParentName(filterNameInput(e.target.value))}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600"
                 />
+                <span className="text-[10px] text-slate-500 mt-1 block">Hanya huruf dan spasi (tanpa angka).</span>
               </div>
             </div>
-
             <div className="p-4 border-t border-slate-200 bg-white flex justify-end gap-2.5 shrink-0">
               <Button variant="secondary" size="sm" onClick={() => setIsNewChildModalOpen(false)}>
                 Batal
