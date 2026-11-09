@@ -6,14 +6,13 @@ import { ParentDashboard } from './views/Parent/ParentDashboard';
 import { CadreDashboard } from './views/Cadre/CadreDashboard';
 import { DoctorDashboard } from './views/Doctor/DoctorDashboard';
 import { GameSessionContainer } from './views/Game/GameSessionContainer';
-import { LanguageLearningContainer } from './views/LanguageLearning/LanguageLearningContainer';
 import { ComponentShowcase } from './views/Dev/ComponentShowcase';
 import { api } from './services/api/client';
 import type { AuthSession } from './types/role';
 
 export function App() {
   const [isDevRoute, setIsDevRoute] = useState(false);
-  const [currentView, setCurrentView] = useState<'welcome' | 'onboarding' | 'login' | 'game' | 'language'>('welcome');
+  const [currentView, setCurrentView] = useState<'welcome' | 'onboarding' | 'login' | 'game'>('welcome');
   const [session, setSession] = useState<AuthSession | null>(null);
 
   useEffect(() => {
@@ -31,10 +30,7 @@ export function App() {
       setCurrentView('login');
     } else if (viewParam === 'game') {
       setCurrentView('game');
-    } else if (viewParam === 'language') {
-      setCurrentView('language');
     }
-
     const roleParam = searchParams.get('role');
     if (roleParam === 'parent') {
       setSession({ token: 'demo-parent', user: { id: 'u-parent', fullName: 'Ibu Siti Rahma', role: 'parent', avatarId: 'av-1' } });
@@ -95,8 +91,6 @@ export function App() {
                 }
               }}
             />
-          ) : currentView === 'language' ? (
-            <LanguageLearningContainer onExit={() => setCurrentView('welcome')} />
           ) : session ? (
             session.user.role === 'parent' ? (
               <ParentDashboard session={session} onLogout={handleLogout} />
@@ -109,7 +103,6 @@ export function App() {
             <WelcomeView
               onStart={() => setCurrentView('onboarding')}
               onLogin={() => setCurrentView('login')}
-              onExploreLanguage={() => setCurrentView('language')}
             />
           ) : currentView === 'login' ? (
             <LoginView

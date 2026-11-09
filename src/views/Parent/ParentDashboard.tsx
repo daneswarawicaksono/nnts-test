@@ -23,7 +23,6 @@ import { ProgressBar } from '../../design-system/primitives/ProgressBar';
 import { BottomSheet } from '../../design-system/primitives/BottomSheet';
 import { NutriSprout } from '../../design-system/mascot/NutriSprout';
 import { GameSessionContainer } from '../Game/GameSessionContainer';
-import { LanguageLearningContainer } from '../LanguageLearning/LanguageLearningContainer';
 import { PrintableKiaReportModal } from './components/PrintableKiaReportModal';
 import { soundSynth } from '../../services/audio/synth';
 import type { AuthSession } from '../../types/role';
@@ -134,7 +133,6 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
   const [newChildName, setNewChildName] = useState<string>('');
   const [newChildAge, setNewChildAge] = useState<number>(24);
   const [isGameActive, setIsGameActive] = useState<boolean>(false);
-  const [isLanguageActive, setIsLanguageActive] = useState<boolean>(false);
 
   // Modals for family report, recipes, and printable KIA
   const [isFamilyReportOpen, setIsFamilyReportOpen] = useState<boolean>(false);
@@ -162,13 +160,6 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
     );
   }
 
-  if (isLanguageActive) {
-    return (
-      <LanguageLearningContainer
-        onExit={() => setIsLanguageActive(false)}
-      />
-    );
-  }
   const handleAddChild = () => {
     if (!newChildName.trim()) return;
     const newRecord: ChildItem = {
