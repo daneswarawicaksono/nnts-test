@@ -143,7 +143,13 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
   const [selectedPatientId, setSelectedPatientId] = useState<string>('P-MLT-01');
   const [searchQuery, setSearchQuery] = useState('');
   const [tierFilter, setTierFilter] = useState<'all' | 'Tier-1' | 'Tier-2' | 'Normal'>('all');
-  const [activeTab, setActiveTab] = useState<'telemetri' | 'somatik' | 'intervensi'>('telemetri');
+  const [activeTab, setActiveTab] = useState<'telemetri' | 'somatik' | 'intervensi'>(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'somatik') return 'somatik';
+    if (tabParam === 'intervensi') return 'intervensi';
+    return 'telemetri';
+  });
   const [showFhirModal, setShowFhirModal] = useState(false);
   const [fhirCopied, setFhirCopied] = useState(false);
 

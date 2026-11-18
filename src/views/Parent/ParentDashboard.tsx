@@ -104,7 +104,13 @@ const RECIPES_DATA: RecipeItem[] = [
 ];
 
 export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLogout }) => {
-  const [activeTab, setActiveTab] = useState<'beranda' | 'pita-kms' | 'dapur'>('beranda');
+  const [activeTab, setActiveTab] = useState<'beranda' | 'pita-kms' | 'dapur'>(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'kms' || tabParam === 'pita-kms') return 'pita-kms';
+    if (tabParam === 'dapur') return 'dapur';
+    return 'beranda';
+  });
 
   // Multi-profile state (didasarkan pada data pendaftaran aktual atau fallback satu anak)
   const [childrenList, setChildrenList] = useState<ChildItem[]>(() => {
@@ -135,6 +141,23 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
           status: 'Belum Ada Skrining',
           hasScreened: false,
           streakCount: 0,
+        },
+      ];
+    }
+
+    // Demo/Figma import preview profile
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('role') === 'parent' || searchParams.get('demo') === '1') {
+      return [
+        {
+          id: 'c-demo-1',
+          name: 'Anisa Maharani',
+          ageMonths: 32,
+          gender: 'P',
+          avatarEmoji: '👧',
+          status: 'Gizi Optimal',
+          hasScreened: true,
+          streakCount: 5,
         },
       ];
     }

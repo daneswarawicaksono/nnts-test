@@ -109,10 +109,15 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
       try {
-        return JSON.parse(cached);
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch {
         // ignore
       }
+    }
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('role') === 'cadre' || searchParams.get('demo') === '1') {
+      return INITIAL_TODDLERS;
     }
     return [];
   });
