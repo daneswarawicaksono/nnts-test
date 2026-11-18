@@ -17,6 +17,7 @@ import { Button } from '../../design-system/primitives/Button';
 import { StreakBadge } from '../../design-system/primitives/StreakBadge';
 import { ProgressBar } from '../../design-system/primitives/ProgressBar';
 import { BottomSheet } from '../../design-system/primitives/BottomSheet';
+import { EmptyState } from '../../design-system/primitives/EmptyState';
 import { NutriSprout } from '../../design-system/mascot/NutriSprout';
 import { GameSessionContainer } from '../Game/GameSessionContainer';
 import { soundSynth } from '../../services/audio/synth';
@@ -28,7 +29,9 @@ export interface ChildItem {
   ageMonths: number;
   gender: 'L' | 'P';
   avatarEmoji: string;
-  status: 'Gizi Optimal' | 'Butuh Pendampingan Besi' | 'Jadwal Timbang Posyandu';
+  status: 'Belum Ada Skrining' | 'Gizi Optimal' | 'Butuh Pendampingan Besi' | 'Jadwal Timbang Posyandu';
+  hasScreened: boolean;
+  streakCount: number;
 }
 
 export interface ParentDashboardProps {
@@ -103,31 +106,65 @@ const RECIPES_DATA: RecipeItem[] = [
 export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLogout }) => {
   const [activeTab, setActiveTab] = useState<'beranda' | 'pita-kms' | 'dapur'>('beranda');
 
-  // Multi-profile state (managed via BottomSheet)
-  const [childrenList, setChildrenList] = useState<ChildItem[]>([
-    {
-      id: 'c-1',
-      name: 'Anisa',
-      ageMonths: 30,
-      gender: 'P',
-      avatarEmoji: '🌱',
-      status: 'Gizi Optimal',
-    },
-    {
-      id: 'c-2',
-      name: 'Bima',
-      ageMonths: 14,
-      gender: 'L',
-      avatarEmoji: '🍊',
-      status: 'Jadwal Timbang Posyandu',
-    },
-  ]);
-  const [activeChildId, setActiveChildId] = useState<string>('c-1');
+  // Multi-profile state (didasarkan pada data pendaftaran aktual atau fallback satu anak)
+  const [childrenList, setChildrenList] = useState<ChildItem[]>(() => {
+    // Cek cache lokal per sesi user
+    const cacheKey = `nnts_children_${session.user.id}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch {
+        // ignore
+      }
+    }
+
+    // Jika user baru mendaftar dengan data anak
+    if (session.user.childData?.childName) {
+      const birth = new Date(session.user.childData.birthDate);
+      const now = new Date();
+      const diffMonths = Math.max(12, Math.min(59, Math.round((now.getTime() - birth.getTime()) / (30 * 86400000))));
+
+      return [
+        {
+          id: `c-${Date.now()}`,
+          name: session.user.childData.childName,
+          ageMonths: diffMonths || 24,
+          gender: session.user.childData.gender || 'P',
+          avatarEmoji: session.user.childData.gender === 'L' ? '👦' : '👧',
+          status: 'Belum Ada Skrining',
+          hasScreened: false,
+          streakCount: 0,
+        },
+      ];
+    }
+
+    // Fallback anak baru bersih
+    return [
+      {
+        id: 'c-default',
+        name: 'Buah Hati',
+        ageMonths: 24,
+        gender: 'P',
+        avatarEmoji: '🌱',
+        status: 'Belum Ada Skrining',
+        hasScreened: false,
+        streakCount: 0,
+      },
+    ];
+  });
+
+  const [activeChildId, setActiveChildId] = useState<string>(() => childrenList[0]?.id || 'c-default');
   const [isProfileSheetOpen, setIsProfileSheetOpen] = useState<boolean>(false);
   const [isAddingChild, setIsAddingChild] = useState<boolean>(false);
   const [newChildName, setNewChildName] = useState<string>('');
   const [newChildAge, setNewChildAge] = useState<number>(24);
   const [isGameActive, setIsGameActive] = useState<boolean>(false);
+
+  // Simpan ke local storage setiap childrenList berubah
+  React.useEffect(() => {
+    localStorage.setItem(`nnts_children_${session.user.id}`, JSON.stringify(childrenList));
+  }, [childrenList, session.user.id]);
 
   // Modals for family report & recipes
   const [isFamilyReportOpen, setIsFamilyReportOpen] = useState<boolean>(false);
@@ -146,9 +183,12 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
           setIsGameActive(false);
           setChildrenList((prev) =>
             prev.map((c) =>
-              c.id === activeChildId ? { ...c, status: 'Gizi Optimal' } : c
+              c.id === activeChildId
+                ? { ...c, status: 'Gizi Optimal', hasScreened: true, streakCount: 1 }
+                : c
             )
           );
+          soundSynth.playChime();
         }}
       />
     );
@@ -162,7 +202,9 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
       ageMonths: newChildAge,
       gender: 'P',
       avatarEmoji: '🍎',
-      status: 'Jadwal Timbang Posyandu',
+      status: 'Belum Ada Skrining',
+      hasScreened: false,
+      streakCount: 0,
     };
     setChildrenList((prev) => [...prev, newRecord]);
     setActiveChildId(newRecord.id);
@@ -223,7 +265,7 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
 
         {/* Global Streak & User Info */}
         <div className="flex items-center gap-2">
-          <StreakBadge count={5} label="Hari" />
+          <StreakBadge count={activeChild.streakCount} label="Hari" />
           <button
             onClick={() => {
               soundSynth.playPop();
@@ -288,112 +330,126 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
               </div>
             </GlassCard>
 
-            {/* KARTU RAPOR GIZI & TUMBUH KEMBANG (VISIBLE DIRECTLY ON BERANDA) */}
-            <GlassCard padding="md" className="border-amber-200/90 bg-white/95 space-y-3 shadow-card">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-                    <Award className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-black text-slate-900">Rapor Gizi &amp; Tumbuh Kembang</h3>
-                    <p className="text-[10px] text-slate-500">{activeChild.name} • {activeChild.ageMonths} Bulan</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  Gizi Optimal
-                </span>
-              </div>
-
-              {/* 3 Domain Telemetry Rows */}
-              <div className="space-y-1.5">
-                {/* Fe */}
-                <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🎈</span>
-                    <div>
-                      <div className="font-bold text-slate-900 text-[11px]">Kecekatan Motorik (Zat Besi)</div>
-                      <div className="text-[9px] text-slate-400">Refleks cepat (305 ms)</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-0.5 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                  </div>
-                </div>
-
-                {/* Zn */}
-                <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🍎</span>
-                    <div>
-                      <div className="font-bold text-slate-900 text-[11px]">Fokus &amp; Atensi (Seng)</div>
-                      <div className="text-[9px] text-slate-400">Paham memilah buah segar (85%)</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-0.5 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 text-slate-200" />
-                  </div>
-                </div>
-
-                {/* B12 */}
-                <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🐰</span>
-                    <div>
-                      <div className="font-bold text-slate-900 text-[11px]">Daya Ingat Spasial (B12)</div>
-                      <div className="text-[9px] text-slate-400">Ingat jejak terbalik (Skor 3)</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-0.5 text-amber-400">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <Star className="w-3.5 h-3.5 text-slate-200" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Rekomendasi Menu Pangan Lokal Singkat */}
-              <div className="p-2.5 rounded-xl bg-teal-50/70 border border-teal-200 text-[11px] text-teal-900 flex items-start gap-2">
-                <Utensils className="w-3.5 h-3.5 text-nutri-teal-700 shrink-0 mt-0.5" />
-                <p className="leading-snug">
-                  <span className="font-bold">Saran Piring Gizi:</span> Berikan kombinasi hati ayam/telur dan bayam 3x sepekan untuk menjaga cadangan zat besi otak.
-                </p>
-              </div>
-
-              {/* Action Buttons: Bagikan ke WhatsApp */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  icon={<FileText className="w-4 h-4 text-nutri-teal-700" />}
-                  onClick={() => {
-                    soundSynth.playPop();
-                    setIsFamilyReportOpen(true);
+            {/* KARTU RAPOR GIZI & TUMBUH KEMBANG ATAU EMPTY STATE UNTUK PENGGUNA BARU */}
+            {!activeChild.hasScreened ? (
+              <GlassCard padding="lg" className="border-teal-200/90 bg-white/95 shadow-card">
+                <EmptyState
+                  title="Belum Ada Riwayat Skrining"
+                  description={`Rapor gizi, indikator zat besi (Fe), seng (Zn), dan vitamin B12 akan terbit otomatis setelah ${activeChild.name} menyelesaikan permainan petualangan 3 pulau.`}
+                  actionLabel="Mulai Petualangan Game Sekarang 🎮"
+                  onAction={() => {
+                    soundSynth.playChime();
+                    setIsGameActive(true);
                   }}
-                >
-                  Detail Rapor
-                </Button>
+                />
+              </GlassCard>
+            ) : (
+              <GlassCard padding="md" className="border-amber-200/90 bg-white/95 space-y-3 shadow-card">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
+                      <Award className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-black text-slate-900">Rapor Gizi &amp; Tumbuh Kembang</h3>
+                      <p className="text-[10px] text-slate-500">{activeChild.name} • {activeChild.ageMonths} Bulan</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    Gizi Optimal
+                  </span>
+                </div>
 
-                <Button
-                  variant="primary"
-                  size="sm"
-                  icon={<Share2 className="w-4 h-4" />}
-                  onClick={handleShareToWhatsApp}
-                >
-                  {copiedShareLink ? 'Dibuka!' : 'Bagikan WA'}
-                </Button>
-              </div>
-            </GlassCard>
+                {/* 3 Domain Telemetry Rows */}
+                <div className="space-y-1.5">
+                  {/* Fe */}
+                  <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🎈</span>
+                      <div>
+                        <div className="font-bold text-slate-900 text-[11px]">Kecekatan Motorik (Zat Besi)</div>
+                        <div className="text-[9px] text-slate-400">Refleks cepat (305 ms)</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-0.5 text-amber-400">
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                    </div>
+                  </div>
+
+                  {/* Zn */}
+                  <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🍎</span>
+                      <div>
+                        <div className="font-bold text-slate-900 text-[11px]">Fokus &amp; Atensi (Seng)</div>
+                        <div className="text-[9px] text-slate-400">Paham memilah buah segar (85%)</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-0.5 text-amber-400">
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 text-slate-200" />
+                    </div>
+                  </div>
+
+                  {/* B12 */}
+                  <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🐰</span>
+                      <div>
+                        <div className="font-bold text-slate-900 text-[11px]">Daya Ingat Spasial (B12)</div>
+                        <div className="text-[9px] text-slate-400">Ingat jejak terbalik (Skor 3)</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-0.5 text-amber-400">
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <Star className="w-3.5 h-3.5 text-slate-200" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rekomendasi Menu Pangan Lokal Singkat */}
+                <div className="p-2.5 rounded-xl bg-teal-50/70 border border-teal-200 text-[11px] text-teal-900 flex items-start gap-2">
+                  <Utensils className="w-3.5 h-3.5 text-nutri-teal-700 shrink-0 mt-0.5" />
+                  <p className="leading-snug">
+                    <span className="font-bold">Saran Piring Gizi:</span> Berikan kombinasi hati ayam/telur dan bayam 3x sepekan untuk menjaga cadangan zat besi otak.
+                  </p>
+                </div>
+
+                {/* Action Buttons: Bagikan ke WhatsApp */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={<FileText className="w-4 h-4 text-nutri-teal-700" />}
+                    onClick={() => {
+                      soundSynth.playPop();
+                      setIsFamilyReportOpen(true);
+                    }}
+                  >
+                    Detail Rapor
+                  </Button>
+
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={<Share2 className="w-4 h-4" />}
+                    onClick={handleShareToWhatsApp}
+                  >
+                    {copiedShareLink ? 'Dibuka!' : 'Bagikan WA'}
+                  </Button>
+                </div>
+              </GlassCard>
+            )}
 
             {/* Quick Insights Cards */}
             <div className="grid grid-cols-2 gap-3">

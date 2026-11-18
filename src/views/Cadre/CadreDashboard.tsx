@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { GlassCard } from '../../design-system/primitives/GlassCard';
 import { Button } from '../../design-system/primitives/Button';
+import { EmptyState } from '../../design-system/primitives/EmptyState';
 import { StreakBadge } from '../../design-system/primitives/StreakBadge';
 import { ProgressBar } from '../../design-system/primitives/ProgressBar';
 import { soundSynth } from '../../services/audio/synth';
@@ -103,7 +104,36 @@ const INITIAL_TODDLERS: ToddlerRecord[] = [
 ];
 
 export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogout }) => {
-  const [toddlers, setToddlers] = useState<ToddlerRecord[]>(INITIAL_TODDLERS);
+  const cacheKey = `nnts_cadre_toddlers_${session.user.id}`;
+  const [toddlers, setToddlers] = useState<ToddlerRecord[]>(() => {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch {
+        // ignore
+      }
+    }
+    return [];
+  });
+
+  // Simpan perubahan ke storage
+  React.useEffect(() => {
+    localStorage.setItem(cacheKey, JSON.stringify(toddlers));
+  }, [toddlers, cacheKey]);
+
+  const handleLoadSimulationData = () => {
+    setToddlers(INITIAL_TODDLERS);
+    soundSynth.playChime();
+  };
+
+  const handleClearData = () => {
+    if (confirm('Bersihkan antrean balita hari ini?')) {
+      setToddlers([]);
+      localStorage.removeItem(cacheKey);
+    }
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals state
@@ -312,21 +342,49 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
               <p className="text-xs text-slate-500">Pilih balita untuk memperbarui data fisik atau melihat riwayat</p>
             </div>
 
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari balita atau orang tua..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
-              />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {toddlers.length > 0 && (
+                <button
+                  onClick={handleClearData}
+                  className="text-[11px] font-bold text-rose-600 hover:text-rose-800 px-2.5 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 transition-colors"
+                >
+                  Reset Antrean
+                </button>
+              )}
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari balita atau orang tua..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-600"
+                />
+              </div>
             </div>
           </div>
 
           {/* Toddler List Table / Grid */}
           <div className="divide-y divide-slate-100">
-            {filteredToddlers.map((t) => {
+            {filteredToddlers.length === 0 ? (
+              <div className="py-8">
+                <EmptyState
+                  title="Belum Ada Antrean Balita"
+                  description="Posyandu hari ini masih bersih. Anda dapat mendaftarkan balita baru satu per satu atau memuat data simulasi untuk keperluan uji coba/demo."
+                  actionLabel="+ Tambah Balita Baru"
+                  onAction={() => setIsNewChildModalOpen(true)}
+                />
+                <div className="text-center mt-3">
+                  <button
+                    onClick={handleLoadSimulationData}
+                    className="text-xs font-bold text-teal-700 hover:text-teal-900 underline"
+                  >
+                    Muat 5 Data Simulasi Posyandu (Demo Mode)
+                  </button>
+                </div>
+              </div>
+            ) : (
+              filteredToddlers.map((t) => {
               const isAlert = t.alert;
               const isMeasured = t.hasMeasuredToday;
 
@@ -410,7 +468,8 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                   </div>
                 </div>
               );
-            })}
+            })
+            )}
           </div>
         </div>
       </div>

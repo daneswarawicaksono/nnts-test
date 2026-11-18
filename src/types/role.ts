@@ -1,5 +1,11 @@
 export type UserRole = 'parent' | 'cadre' | 'doctor';
 
+export interface RegisteredChildData {
+  childName: string;
+  birthDate: string;
+  gender: 'L' | 'P';
+}
+
 export interface AuthSession {
   token: string;
   user: {
@@ -9,5 +15,6 @@ export interface AuthSession {
     avatarId: string;
     posyanduId?: string; // For cadre
     faskesId?: string; // For doctor
+    childData?: RegisteredChildData; // For parent newly registered child
   };
 }

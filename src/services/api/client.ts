@@ -151,6 +151,7 @@ class ApiClient {
         avatarId: payload.avatarId,
         posyanduId: payload.cadreData ? 'POSYANDU-MLT-01' : undefined,
         faskesId: payload.doctorData ? 'P3404010101' : undefined,
+        childData: payload.childData,
       },
     };
 
