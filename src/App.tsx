@@ -1,172 +1,116 @@
 import { useState, useEffect } from 'react';
-import { Route, Switch, useLocation } from 'wouter';
 import { WelcomeView } from './views/Welcome/WelcomeView';
 import { OnboardingView } from './views/Onboarding/OnboardingView';
+import { ParentDashboard } from './views/Parent/ParentDashboard';
+import { CadreDashboard } from './views/Cadre/CadreDashboard';
+import { DoctorDashboard } from './views/Doctor/DoctorDashboard';
 import { GameSessionContainer } from './views/Game/GameSessionContainer';
 import { ComponentShowcase } from './views/Dev/ComponentShowcase';
-import { RoleGuard } from './routes/RoleGuard';
-
-// Modular Cadre Pages
-import { QueueView } from './views/Cadre/pages/QueueView';
-import { WeighMeasureView } from './views/Cadre/pages/WeighMeasureView';
-import { RecapView } from './views/Cadre/pages/RecapView';
-
-// Modular Doctor Pages
-import { WorklistView } from './views/Doctor/pages/WorklistView';
-import { CDSSAnalysisView } from './views/Doctor/pages/CDSSAnalysisView';
-import { InterventionView } from './views/Doctor/pages/InterventionView';
-
-// Modular Parent Pages
-import { HomeOverviewView } from './views/Parent/pages/HomeOverviewView';
-import { KMSDigitalView } from './views/Parent/pages/KMSDigitalView';
-import { NutritionKitchenView } from './views/Parent/pages/NutritionKitchenView';
-
-import { coreClient } from './services/api/coreClient';
+import { api } from './services/api/client';
 import type { AuthSession } from './types/role';
 
 export function App() {
-  const [session, setSession] = useState<AuthSession | null>(() => coreClient.getSession<AuthSession>());
-  const [, setLocation] = useLocation();
+  const [isDevRoute, setIsDevRoute] = useState(false);
+  const [currentView, setCurrentView] = useState<'welcome' | 'onboarding' | 'game'>('welcome');
+  const [session, setSession] = useState<AuthSession | null>(null);
 
   useEffect(() => {
-    // Demo query params handler
-    const params = new URLSearchParams(window.location.search);
-    const roleParam = params.get('role');
-    
-    if (roleParam === 'parent') {
-      const s: AuthSession = { token: 'demo-parent', user: { id: 'u-parent', fullName: 'Ibu Siti Rahma', role: 'parent', avatarId: 'av-1' } };
-      coreClient.setSession(s);
-      setSession(s);
-      setLocation('/parent/home');
-    } else if (roleParam === 'cadre') {
-      const s: AuthSession = { token: 'demo-cadre', user: { id: 'u-cadre', fullName: 'Kader Nurul Hidayah', role: 'cadre', avatarId: 'av-2', posyanduId: 'POSYANDU-MLT-01' } };
-      coreClient.setSession(s);
-      setSession(s);
-      setLocation('/cadre/queue');
-    } else if (roleParam === 'doctor') {
-      const s: AuthSession = { token: 'demo-doctor', user: { id: 'u-doctor', fullName: 'dr. Budi Santoso, Sp.A', role: 'doctor', avatarId: 'av-3', faskesId: 'PUSK-TEGALREJO' } };
-      coreClient.setSession(s);
-      setSession(s);
-      setLocation('/doctor/worklist');
-    }
-  }, [setLocation]);
+    // Check if user navigated to /dev or ?dev=1
+    const searchParams = new URLSearchParams(window.location.search);
+    const hasDevParam = searchParams.get('dev') === '1';
+    const isDevPath = window.location.pathname.startsWith('/dev');
+    setIsDevRoute(hasDevParam || isDevPath);
 
-  const handleCompleteOnboarding = (newSession: AuthSession) => {
-    coreClient.setSession(newSession);
-    setSession(newSession);
-    const target = 
-      newSession.user.role === 'cadre' ? '/cadre/queue' : 
-      newSession.user.role === 'doctor' ? '/doctor/worklist' : '/parent/home';
-    setLocation(target);
+    // Check URL route parameters for direct testing
+    const viewParam = searchParams.get('view');
+    if (viewParam === 'onboarding') {
+      setCurrentView('onboarding');
+    } else if (viewParam === 'game') {
+      setCurrentView('game');
+    }
+
+    const roleParam = searchParams.get('role');
+    if (roleParam === 'parent') {
+      setSession({ token: 'demo-parent', user: { id: 'u-parent', fullName: 'Ibu Siti Rahma', role: 'parent', avatarId: 'av-1' } });
+    } else if (roleParam === 'cadre') {
+      setSession({ token: 'demo-cadre', user: { id: 'u-cadre', fullName: 'Kader Nurul Hidayah', role: 'cadre', avatarId: 'av-2', posyanduId: 'POSYANDU-MLT-01' } });
+    } else if (roleParam === 'doctor') {
+      setSession({ token: 'demo-doctor', user: { id: 'u-doctor', fullName: 'dr. Budi Santoso, Sp.A', role: 'doctor', avatarId: 'av-3', faskesId: 'PUSK-TEGALREJO' } });
+    } else {
+      // Check existing session in storage
+      const activeSession = api.getSession();
+      if (activeSession) {
+        setSession(activeSession);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    api.logout();
+    setSession(null);
+    setCurrentView('welcome');
   };
 
+  // Developer Showcase Route (Isolated for Component Inspection)
+  if (isDevRoute) {
+    return <ComponentShowcase />;
+  }
+
+  // Clinical & Cadre roles expand to a professional workstation layout on desktop/laptop
+  const isExpandedWorkstation =
+    Boolean(session && (session.user.role === 'doctor' || session.user.role === 'cadre') && currentView !== 'game');
+
   return (
-    <Switch>
-      {/* Dev Route */}
-      <Route path="/dev" component={ComponentShowcase} />
-
-      {/* Public Landing & Onboarding */}
-      <Route path="/">
-        <WelcomeView
-          onStart={() => setLocation('/onboarding')}
-          onLogin={() => setLocation('/onboarding')}
-        />
-      </Route>
-
-      <Route path="/onboarding">
-        <OnboardingView
-          onBackToWelcome={() => setLocation('/')}
-          onComplete={handleCompleteOnboarding}
-        />
-      </Route>
-
-      {/* Interactive Child Game Screen */}
-      <Route path="/game/:childId">
-        {(params) => (
-          <GameSessionContainer
-            childId={params.childId || 'c-demo'}
-            childName="Anisa"
-            onExit={() => {
-              if (session) {
-                const target = session.user.role === 'cadre' ? '/cadre/queue' : '/parent/home';
-                setLocation(target);
-              } else {
-                setLocation('/');
-              }
-            }}
-            onFinishSession={() => {
-              setLocation(session?.user.role === 'cadre' ? '/cadre/queue' : '/parent/home');
-            }}
-          />
+    <div className="min-h-screen w-full bg-white sm:bg-slate-100 flex items-center justify-center sm:p-4 font-sans">
+      <div
+        className={
+          isExpandedWorkstation
+            ? 'w-full max-w-6xl h-[100dvh] sm:h-[min(900px,96vh)] bg-white sm:rounded-3xl sm:shadow-2xl sm:border border-slate-200/90 overflow-hidden relative flex flex-col transition-all duration-normal'
+            : 'w-full sm:max-w-[400px] h-[100dvh] sm:h-[min(820px,94vh)] bg-white sm:rounded-[44px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 overflow-hidden relative flex flex-col transition-all duration-normal'
+        }
+      >
+        {/* Dynamic Notch Pill on Desktop Frame (only shown on mobile-frame mode) */}
+        {!isExpandedWorkstation && (
+          <div className="hidden sm:block absolute top-2 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-800 rounded-pill z-50 pointer-events-none" />
         )}
-      </Route>
 
-      {/* Role: Kader Posyandu Pages */}
-      <Route path="/cadre/queue">
-        <RoleGuard session={session} allowedRole="cadre">
-          <QueueView />
-        </RoleGuard>
-      </Route>
-      <Route path="/cadre/weigh">
-        <RoleGuard session={session} allowedRole="cadre">
-          <WeighMeasureView />
-        </RoleGuard>
-      </Route>
-      <Route path="/cadre/recap">
-        <RoleGuard session={session} allowedRole="cadre">
-          <RecapView />
-        </RoleGuard>
-      </Route>
-
-      {/* Role: Dokter Puskesmas Pages */}
-      <Route path="/doctor/worklist">
-        <RoleGuard session={session} allowedRole="doctor">
-          <WorklistView />
-        </RoleGuard>
-      </Route>
-      <Route path="/doctor/cdss/:id">
-        <RoleGuard session={session} allowedRole="doctor">
-          <CDSSAnalysisView />
-        </RoleGuard>
-      </Route>
-      <Route path="/doctor/interventions">
-        <RoleGuard session={session} allowedRole="doctor">
-          <InterventionView />
-        </RoleGuard>
-      </Route>
-
-      {/* Role: Orang Tua Pages */}
-      <Route path="/parent/home">
-        <RoleGuard session={session} allowedRole="parent">
-          <HomeOverviewView />
-        </RoleGuard>
-      </Route>
-      <Route path="/parent/kms">
-        <RoleGuard session={session} allowedRole="parent">
-          <KMSDigitalView />
-        </RoleGuard>
-      </Route>
-      <Route path="/parent/nutrition">
-        <RoleGuard session={session} allowedRole="parent">
-          <NutritionKitchenView />
-        </RoleGuard>
-      </Route>
-
-      {/* Fallback 404 */}
-      <Route>
-        <div className="min-h-screen flex items-center justify-center p-4 text-center">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">404 - Halaman Tidak Ditemukan</h1>
-            <button
-              onClick={() => setLocation('/')}
-              className="mt-4 px-4 py-2 bg-teal-700 text-white text-xs font-bold rounded-xl"
-            >
-              Kembali ke Beranda
-            </button>
-          </div>
+        {/* Dynamic View Router */}
+        <div className="flex-1 w-full h-full overflow-hidden flex flex-col relative">
+          {currentView === 'game' ? (
+            <GameSessionContainer
+              childId="c-demo"
+              childName="Anisa"
+              onExit={() => setCurrentView(session ? 'welcome' : 'welcome')}
+              onFinishSession={() => {
+                if (session) {
+                  setCurrentView('welcome');
+                } else {
+                  setCurrentView('welcome');
+                }
+              }}
+            />
+          ) : session ? (
+            session.user.role === 'parent' ? (
+              <ParentDashboard session={session} onLogout={handleLogout} />
+            ) : session.user.role === 'cadre' ? (
+              <CadreDashboard session={session} onLogout={handleLogout} />
+            ) : (
+              <DoctorDashboard session={session} onLogout={handleLogout} />
+            )
+          ) : currentView === 'welcome' ? (
+            <WelcomeView
+              onStart={() => setCurrentView('onboarding')}
+              onLogin={() => setCurrentView('onboarding')}
+            />
+          ) : (
+            <OnboardingView
+              onBackToWelcome={() => setCurrentView('welcome')}
+              onComplete={(newSession) => setSession(newSession)}
+            />
+          )}
         </div>
-      </Route>
-    </Switch>
+      </div>
+    </div>
   );
 }
 
