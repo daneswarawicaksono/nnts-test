@@ -46,14 +46,14 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart, onLogin }) =>
           }}
         >
           <img
-            src="/mascot/kerro_pose6_stand.png"
+            src="/mascot/kerro_pose5_wave.png"
             alt="Kerro the Frog"
             className="w-36 h-36 sm:w-40 sm:h-40 object-contain drop-shadow-md group-hover:scale-105 transition-transform duration-300"
           />
         </div>
 
         {/* Brand: otakatik */}
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#2F9E44] tracking-tight mb-2">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-[#34A853] tracking-tight mb-2">
           otakatik
         </h1>
 
@@ -69,7 +69,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart, onLogin }) =>
         <button
           type="button"
           onClick={handleStartClick}
-          className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm sm:text-base tracking-wide shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer"
+          className="w-full py-3.5 px-6 rounded-[16px] bg-[#34A853] hover:bg-[#2E9449] active:scale-[0.98] text-white font-bold text-sm sm:text-base tracking-wide shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer"
         >
           GET STARTED
         </button>
@@ -78,7 +78,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart, onLogin }) =>
         <button
           type="button"
           onClick={handleLoginClick}
-          className="w-full py-3.5 px-6 rounded-full bg-white hover:bg-slate-50 active:scale-[0.98] text-[#2F9E44] font-bold text-sm tracking-wide border border-slate-200 hover:border-emerald-300 shadow-sm transition-all duration-200 cursor-pointer"
+          className="w-full py-3.5 px-6 rounded-[16px] bg-white hover:bg-slate-50 active:scale-[0.98] text-[#34A853] font-bold text-sm tracking-wide border border-slate-200 hover:border-emerald-300 shadow-sm transition-all duration-200 cursor-pointer"
         >
           I ALREADY HAVE AN ACCOUNT
         </button>

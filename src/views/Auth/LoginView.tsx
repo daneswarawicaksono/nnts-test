@@ -147,7 +147,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 onClick={() =>
                   alert('Untuk reset kata sandi demo, gunakan password default: password123')
                 }
-                className="text-[11px] font-semibold text-[#2F9E44] hover:underline"
+                className="text-[11px] font-semibold text-[#34A853] hover:underline"
               >
                 Forgot password?
               </button>
@@ -175,7 +175,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-2 py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full mt-2 py-3.5 px-6 rounded-full bg-[#34A853] hover:bg-[#2E9449] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -262,7 +262,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             soundSynth.playPop();
             onGoToRegister();
           }}
-          className="text-[#2F9E44] font-bold hover:underline cursor-pointer"
+          className="text-[#34A853] font-bold hover:underline cursor-pointer"
         >
           Sign up
         </button>

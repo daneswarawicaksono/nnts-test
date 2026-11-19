@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, AlertCircle, Calendar, Eye, EyeOff, Heart, Stethoscope, Users } from 'lucide-react';
+import { ArrowLeft, Check, AlertCircle, Calendar, Eye, EyeOff } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { soundSynth } from '../../services/audio/synth';
 import { api, type RegisterPayload } from '../../services/api/client';
@@ -49,6 +49,11 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   const calculatedAgeMonths = childBirthDate ? ageInMonths(childBirthDate, todayStr) : 0;
   const isChildAgeValid = Boolean(childBirthDate) && calculatedAgeMonths >= 24 && calculatedAgeMonths <= 59;
 
+  // Validasi kredensial akun — wajib untuk semua role, selaras dengan RegisterSchema backend
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const isValidPassword = password.trim().length >= 6;
+  const isCredentialsValid = isValidEmail && isValidPassword;
+
   // Cadre & Doctor data
   const [cadrePosyandu, setCadrePosyandu] = useState('Posyandu Melati 1');
   const [cadreRw, setCadreRw] = useState('RW 03');
@@ -85,11 +90,12 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   // Step validations
   const isStep4Valid = fullName.trim().length >= 2;
   const isStep5Valid =
-    selectedRole === 'parent'
+    isCredentialsValid &&
+    (selectedRole === 'parent'
       ? childName.trim().length >= 2 && Boolean(childBirthDate) && isChildAgeValid
       : selectedRole === 'cadre'
       ? cadrePosyandu.trim().length >= 3 && Boolean(codeSuccess)
-      : doctorFaskes.trim().length >= 3 && Boolean(codeSuccess);
+      : doctorFaskes.trim().length >= 3 && Boolean(codeSuccess));
 
   const handleNext = () => {
     soundSynth.playPop();
@@ -118,8 +124,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
       soundSynth.playPop();
       const generatedUsername =
         fullName.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 15) || `user_${Date.now()}`;
-      const userEmail = email.trim() || `${generatedUsername}@posyandu.id`;
-      const userPassword = password.trim() || 'password123';
+      const userEmail = email.trim();
+      const userPassword = password.trim();
 
       const payload: RegisterPayload = {
         role: selectedRole,
@@ -172,7 +178,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
           particleCount: 45,
           spread: 60,
           origin: { y: 0.7 },
-          colors: ['#2F9E44', '#10B981', '#F59E0B', '#3B82F6'],
+          colors: ['#34A853', '#10B981', '#F59E0B', '#3B82F6'],
           disableForReducedMotion: true,
         });
       } catch {
@@ -188,6 +194,47 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
     }
   };
 
+  // Blok kredensial akun (email + password) — dipakai di ketiga role pada Step 5
+  const renderCredentialsFields = () => (
+    <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+      <span className="text-xs font-bold text-slate-800">Atur Akun & Kata Sandi</span>
+      <div className="flex flex-col gap-0.5">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email akun (contoh: nama@gmail.com)"
+          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+        />
+        {email.trim().length > 0 && !isValidEmail && (
+          <p className="text-[11px] text-rose-600 font-medium">⚠️ Format email tidak valid.</p>
+        )}
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <div className="relative w-full">
+          <input
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Minimal 6 karakter"
+            className="w-full px-4 py-2.5 pr-10 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 p-1"
+            aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+          >
+            {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+        {password.trim().length > 0 && !isValidPassword && (
+          <p className="text-[11px] text-rose-600 font-medium">⚠️ Kata sandi minimal 6 karakter.</p>
+        )}
+      </div>
+    </div>
+  );
+
   // Progress Bar for Steps 3, 4, 5
   const renderProgressBar = () => {
     if (step < 3) return null;
@@ -195,7 +242,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
     return (
       <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-4">
         <div
-          className="bg-[#2F9E44] h-full transition-all duration-300 rounded-full"
+          className="bg-[#34A853] h-full transition-all duration-300 rounded-full"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -245,7 +292,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
           <button
             type="button"
             onClick={handleNext}
-            className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer"
+            className="w-full py-3.5 px-6 rounded-[16px] bg-[#34A853] hover:bg-[#2E9449] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer"
           >
             CONTINUE
           </button>
@@ -276,7 +323,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
           <button
             type="button"
             onClick={handleNext}
-            className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer"
+            className="w-full py-3.5 px-6 rounded-[16px] bg-[#34A853] hover:bg-[#2E9449] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer"
           >
             CONTINUE
           </button>
@@ -299,21 +346,19 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
               }}
               className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
                 selectedRole === 'parent'
-                  ? 'border-[#2F9E44] bg-emerald-50/50 shadow-sm'
+                  ? 'border-[#34A853] bg-emerald-50/50 shadow-sm'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
-                  <Heart className="w-5 h-5" />
-                </div>
+                <img src="/icons/role-parent.png" alt="" className="w-[42px] h-[42px] object-contain shrink-0" />
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Parent / Family</h3>
                   <p className="text-xs text-slate-500">Tracking my child&apos;s healthy growth</p>
                 </div>
               </div>
               {selectedRole === 'parent' && (
-                <div className="w-6 h-6 rounded-full bg-[#2F9E44] flex items-center justify-center text-white">
+                <div className="w-6 h-6 rounded-full bg-[#34A853] flex items-center justify-center text-white">
                   <Check className="w-4 h-4" />
                 </div>
               )}
@@ -327,21 +372,19 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
               }}
               className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
                 selectedRole === 'cadre'
-                  ? 'border-[#2F9E44] bg-emerald-50/50 shadow-sm'
+                  ? 'border-[#34A853] bg-emerald-50/50 shadow-sm'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-700">
-                  <Users className="w-5 h-5" />
-                </div>
+                <img src="/icons/role-cadre.png" alt="" className="w-[45px] h-[44px] object-contain shrink-0" />
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Posyandu Cadre</h3>
                   <p className="text-xs text-slate-500">Weighing & screening session work</p>
                 </div>
               </div>
               {selectedRole === 'cadre' && (
-                <div className="w-6 h-6 rounded-full bg-[#2F9E44] flex items-center justify-center text-white">
+                <div className="w-6 h-6 rounded-full bg-[#34A853] flex items-center justify-center text-white">
                   <Check className="w-4 h-4" />
                 </div>
               )}
@@ -355,21 +398,19 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
               }}
               className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
                 selectedRole === 'doctor'
-                  ? 'border-[#2F9E44] bg-emerald-50/50 shadow-sm'
+                  ? 'border-[#34A853] bg-emerald-50/50 shadow-sm'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
-                  <Stethoscope className="w-5 h-5" />
-                </div>
+                <span className="text-2xl w-10 shrink-0 text-center" role="img" aria-label="Dokter">🩺</span>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Puskesmas Doctor</h3>
                   <p className="text-xs text-slate-500">Clinical referral & triage decision</p>
                 </div>
               </div>
               {selectedRole === 'doctor' && (
-                <div className="w-6 h-6 rounded-full bg-[#2F9E44] flex items-center justify-center text-white">
+                <div className="w-6 h-6 rounded-full bg-[#34A853] flex items-center justify-center text-white">
                   <Check className="w-4 h-4" />
                 </div>
               )}
@@ -393,7 +434,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
           <button
             type="button"
             onClick={handleNext}
-            className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer"
+            className="w-full py-3.5 px-6 rounded-[16px] bg-[#34A853] hover:bg-[#2E9449] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer"
           >
             CONTINUE
           </button>
@@ -440,7 +481,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
             type="button"
             onClick={handleNext}
             disabled={!isStep4Valid}
-            className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full py-3.5 px-6 rounded-[16px] bg-[#34A853] hover:bg-[#2E9449] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             LANJUTKAN
           </button>
@@ -487,11 +528,11 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                   }}
                   className={`flex-1 py-3 px-4 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${
                     childGender === 'L'
-                      ? 'border-[#2F9E44] bg-emerald-50'
+                      ? 'border-[#34A853] bg-emerald-50'
                       : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
-                  <span className="text-2xl">👦</span>
+                  <img src="/icons/gender-boy.png" alt="" className="w-12 h-12 object-contain" />
                   <span className="text-xs font-bold text-slate-700">Boy</span>
                 </button>
 
@@ -503,11 +544,11 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                   }}
                   className={`flex-1 py-3 px-4 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${
                     childGender === 'P'
-                      ? 'border-[#2F9E44] bg-emerald-50'
+                      ? 'border-[#34A853] bg-emerald-50'
                       : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
-                  <span className="text-2xl">👧</span>
+                  <img src="/icons/gender-girl.png" alt="" className="w-12 h-12 object-contain" />
                   <span className="text-xs font-bold text-slate-700">Girl</span>
                 </button>
               </div>
@@ -551,35 +592,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                 )}
               </div>
 
-              {/* Account Credentials */}
-              <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
-                <span className="text-xs font-bold text-slate-800">
-                  Atur Akun & Kata Sandi (Opsional)
-                </span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email akun (contoh: bunda@gmail.com)"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                />
-                <div className="relative w-full">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Kata sandi (default: password123)"
-                    className="w-full px-4 py-2.5 pr-10 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 p-1"
-                  >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
+              {renderCredentialsFields()}
             </div>
           ) : selectedRole === 'cadre' ? (
             /* CADRE SPECIFIC FIELDS */
@@ -631,6 +644,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                 {codeError && <p className="text-[11px] text-rose-600">❌ {codeError}</p>}
                 <p className="text-[10px] text-slate-400">Kode demo: KADER-MLT01</p>
               </div>
+
+              {renderCredentialsFields()}
             </div>
           ) : (
             /* DOCTOR SPECIFIC FIELDS */
@@ -684,6 +699,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                 {codeError && <p className="text-[11px] text-rose-600">❌ {codeError}</p>}
                 <p className="text-[10px] text-slate-400">Kode demo: DOKTER-FKTP</p>
               </div>
+
+              {renderCredentialsFields()}
             </div>
           )}
 
@@ -692,7 +709,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
             type="button"
             onClick={handleFinalSubmit}
             disabled={!isStep5Valid || isSubmitting}
-            className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 px-6 rounded-[16px] bg-[#34A853] hover:bg-[#2E9449] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
