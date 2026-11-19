@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ArrowRight, Check, ShieldCheck, Heart, Stethoscope, Users, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Check, AlertCircle, Calendar, Eye, EyeOff, Heart, Stethoscope, Users } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { Button } from '../../design-system/primitives/Button';
-import { TextField } from '../../design-system/primitives/TextField';
-import { Stepper } from '../../design-system/primitives/Stepper';
-import { AvatarPicker } from '../../design-system/primitives/AvatarPicker';
-import { SpeechBubble } from '../../design-system/primitives/SpeechBubble';
-import { NutriSprout, type NutriSproutMood } from '../../design-system/mascot/NutriSprout';
 import { soundSynth } from '../../services/audio/synth';
 import { api, type RegisterPayload } from '../../services/api/client';
 import { ageInMonths } from '../../utils/age';
@@ -21,13 +15,19 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   onBackToWelcome,
   onComplete,
 }) => {
+  // Step 1: Intro 1 (Hi there! I'm Kerro!)
+  // Step 2: Intro 2 (Just 3 quick games...)
+  // Step 3: Role Selection (Parent / Cadre / Doctor)
+  // Step 4: "Kenalan dulu, yuk!" (Nama pengguna, tanpa avatar)
+  // Step 5: "About your little one" / Setup akun & kata sandi
   const [step, setStep] = useState<number>(1);
-  const [mascotMood, setMascotMood] = useState<NutriSproutMood>('happy');
 
   // Form states
-  const [fullName, setFullName] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState('av-1');
   const [selectedRole, setSelectedRole] = useState<UserRole>('parent');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Verification code for cadre / doctor
   const [inviteCode, setInviteCode] = useState('');
@@ -35,7 +35,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   const [codeSuccess, setCodeSuccess] = useState<string | undefined>();
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
 
-  // Contextual data for step 3
+  // Child data for parent
   const [childName, setChildName] = useState('');
   const todayStr = new Date().toISOString().split('T')[0];
   const getDefaultBirthDate = () => {
@@ -45,33 +45,20 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   };
   const [childBirthDate, setChildBirthDate] = useState<string>(getDefaultBirthDate);
   const [childGender, setChildGender] = useState<'L' | 'P'>('P');
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const calculatedAgeMonths = childBirthDate ? ageInMonths(childBirthDate, todayStr) : 0;
   const isChildAgeValid = Boolean(childBirthDate) && calculatedAgeMonths >= 24 && calculatedAgeMonths <= 59;
 
+  // Cadre & Doctor data
   const [cadrePosyandu, setCadrePosyandu] = useState('Posyandu Melati 1');
   const [cadreRw, setCadreRw] = useState('RW 03');
-
   const [doctorFaskes, setDoctorFaskes] = useState('Puskesmas Tegalrejo');
   const [doctorNip, setDoctorNip] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Validation logic
-  const isStep1Valid = fullName.trim().length >= 2;
-
-  const isStep2Valid =
-    selectedRole === 'parent' || (Boolean(codeSuccess) && !codeError);
-
-  const isStep3Valid =
-    selectedRole === 'parent'
-      ? childName.trim().length >= 2 && Boolean(childBirthDate) && isChildAgeValid
-      : selectedRole === 'cadre'
-      ? cadrePosyandu.trim().length >= 3 && cadreRw.trim().length >= 1
-      : doctorFaskes.trim().length >= 3 && doctorNip.trim().length >= 5;
-
-  // Handle invitation code verification
+  // Verification helper for invitation codes
   const handleVerifyCode = async (codeToVerify: string, roleToVerify: UserRole) => {
     if (!codeToVerify.trim()) {
       setCodeError(undefined);
@@ -95,98 +82,19 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
     }
   };
 
-  const handleNext = async () => {
+  // Step validations
+  const isStep4Valid = fullName.trim().length >= 2;
+  const isStep5Valid =
+    selectedRole === 'parent'
+      ? childName.trim().length >= 2 && Boolean(childBirthDate) && isChildAgeValid
+      : selectedRole === 'cadre'
+      ? cadrePosyandu.trim().length >= 3 && Boolean(codeSuccess)
+      : doctorFaskes.trim().length >= 3 && Boolean(codeSuccess);
+
+  const handleNext = () => {
     soundSynth.playPop();
-
-    if (step === 1 && isStep1Valid) {
-      setStep(2);
-      setMascotMood('curious');
-    } else if (step === 2 && isStep2Valid) {
-      setStep(3);
-      setMascotMood('calm');
-    } else if (step === 3 && isStep3Valid) {
-      // Final submission
-      setIsSubmitting(true);
-      setSubmitError(null);
-      try {
-        let registeredSubjectId: string | undefined = undefined;
-
-        if (selectedRole === 'parent') {
-          // Daftarkan anak ke server registri subjek API
-          const subRes = await api.createSubject({
-            child_name: childName.trim(),
-            birth_date: childBirthDate,
-            sex: childGender === 'L' ? 'M' : 'F',
-            posyandu_id: 'POS-DIY-MLT01',
-            guardian_name: fullName.trim(),
-          });
-          registeredSubjectId = subRes.pseudo_uuid;
-        }
-
-        const payload: RegisterPayload = {
-          role: selectedRole,
-          fullName: fullName.trim(),
-          avatarId: selectedAvatar,
-          invitationCode: selectedRole !== 'parent' ? inviteCode.trim() : undefined,
-          childData:
-            selectedRole === 'parent'
-              ? {
-                  childName: childName.trim(),
-                  birthDate: childBirthDate,
-                  gender: childGender,
-                  subjectId: registeredSubjectId,
-                }
-              : undefined,
-          cadreData:
-            selectedRole === 'cadre'
-              ? { posyanduName: cadrePosyandu.trim(), rwCode: cadreRw.trim() }
-              : undefined,
-          doctorData:
-            selectedRole === 'doctor'
-              ? { faskesName: doctorFaskes.trim(), nip: doctorNip.trim() }
-              : undefined,
-        };
-
-        const session = await api.registerUser(payload);
-
-        // Jika orang tua, inisialisasi profil anak aktif di localStorage
-        if (selectedRole === 'parent' && registeredSubjectId) {
-          const initialChild = {
-            id: `c-${Date.now()}`,
-            subjectId: registeredSubjectId,
-            birthDate: childBirthDate,
-            name: childName.trim(),
-            ageMonths: calculatedAgeMonths,
-            gender: childGender,
-            avatarEmoji: childGender === 'L' ? '👦' : '👧',
-            status: 'Belum Ada Skrining',
-            hasScreened: false,
-            streakCount: 0,
-          };
-          localStorage.setItem(`nnts_children_${session.user.id}`, JSON.stringify([initialChild]));
-        }
-
-        // Confetti burst on successful registration
-        try {
-          confetti({
-            particleCount: 40,
-            spread: 60,
-            origin: { y: 0.7 },
-            colors: ['#0F766E', '#10B981', '#F97316', '#FDE047'],
-            disableForReducedMotion: true,
-          });
-        } catch {
-          // ignore if canvas blocked
-        }
-
-        soundSynth.playChime();
-        onComplete(session);
-      } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : 'Pendaftaran gagal';
-        setSubmitError(errorMsg);
-      } finally {
-        setIsSubmitting(false);
-      }
+    if (step < 5) {
+      setStep((prev) => prev + 1);
     }
   };
 
@@ -195,335 +103,605 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
     if (step === 1) {
       onBackToWelcome();
     } else {
-      setStep((s) => s - 1);
+      setStep((prev) => prev - 1);
     }
   };
 
-  // Dynamic dialogue for mascot
-  const mascotDialogue =
-    step === 1
-      ? 'Yuk kenalan! Siapa namamu dan pilih avatar ceriamu.'
-      : step === 2
-      ? selectedRole === 'parent'
-        ? 'Orang tua hebat! Siap mendampingi gizi buah hati.'
-        : 'Masukkan kode faskes untuk verifikasi wewenang penugasan.'
-      : selectedRole === 'parent'
-      ? 'Satu langkah lagi! Lengkapi data awal si kecil.'
-      : 'Konfirmasi wilayah faskes tugasmu.';
+  const handleFinalSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!isStep5Valid) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      soundSynth.playPop();
+      const generatedUsername =
+        fullName.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 15) || `user_${Date.now()}`;
+      const userEmail = email.trim() || `${generatedUsername}@posyandu.id`;
+      const userPassword = password.trim() || 'password123';
+
+      const payload: RegisterPayload = {
+        role: selectedRole,
+        fullName: fullName.trim(),
+        avatarId: 'av-1',
+        username: generatedUsername,
+        email: userEmail,
+        password: userPassword,
+        invitationCode: selectedRole !== 'parent' ? inviteCode.trim() : undefined,
+        childData:
+          selectedRole === 'parent'
+            ? {
+                childName: childName.trim(),
+                birthDate: childBirthDate,
+                gender: childGender,
+              }
+            : undefined,
+        cadreData:
+          selectedRole === 'cadre'
+            ? { posyanduName: cadrePosyandu.trim(), rwCode: cadreRw.trim() }
+            : undefined,
+        doctorData:
+          selectedRole === 'doctor'
+            ? { faskesName: doctorFaskes.trim(), nip: doctorNip.trim() }
+            : undefined,
+      };
+
+      const session = await api.registerUser(payload);
+
+      // Inisialisasi profil anak aktif di localStorage untuk dashboard orang tua
+      if (selectedRole === 'parent') {
+        const initialChild = {
+          id: `c-${Date.now()}`,
+          subjectId: session.user.childData?.subjectId || `sub-${Date.now()}`,
+          birthDate: childBirthDate,
+          name: childName.trim(),
+          ageMonths: calculatedAgeMonths,
+          gender: childGender,
+          avatarEmoji: childGender === 'L' ? '👦' : '👧',
+          status: 'Belum Ada Skrining',
+          hasScreened: false,
+          streakCount: 0,
+        };
+        localStorage.setItem(`nnts_children_${session.user.id}`, JSON.stringify([initialChild]));
+      }
+
+      // Confetti burst
+      try {
+        confetti({
+          particleCount: 45,
+          spread: 60,
+          origin: { y: 0.7 },
+          colors: ['#2F9E44', '#10B981', '#F59E0B', '#3B82F6'],
+          disableForReducedMotion: true,
+        });
+      } catch {
+        // ignore
+      }
+
+      soundSynth.playChime();
+      onComplete(session);
+    } catch (err: any) {
+      setSubmitError(err.message || 'Gagal menyelesaikan pendaftaran');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Progress Bar for Steps 3, 4, 5
+  const renderProgressBar = () => {
+    if (step < 3) return null;
+    const progressPercent = step === 3 ? 33 : step === 4 ? 66 : 100;
+    return (
+      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-4">
+        <div
+          className="bg-[#2F9E44] h-full transition-all duration-300 rounded-full"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+    );
+  };
 
   return (
-    <div className="w-full h-full bg-gradient-to-b from-[#F0FDF4] via-[#F8FAFC] to-[#FFFBEB] flex flex-col justify-between px-5 py-5 sm:py-6 font-sans select-none relative overflow-y-auto">
-      {/* TOP HEADER: Back Button & Stepper */}
-      <header className="w-full max-w-sm mx-auto flex items-center justify-between gap-3 mb-4 shrink-0">
+    <div className="w-full h-full bg-white flex flex-col justify-between px-6 py-5 select-none relative overflow-y-auto">
+      {/* TOP BAR */}
+      <div className="w-full flex items-center justify-between pt-1 pb-1">
         <button
           type="button"
           onClick={handleBack}
-          className="w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors shadow-subtle shrink-0"
+          className="p-2 -ml-2 rounded-full text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
           aria-label="Kembali"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
-
-        <div className="flex-1 max-w-[240px]">
-          <Stepper
-            steps={['Profil', 'Peran', 'Data Dasar']}
-            currentStep={step}
-          />
-        </div>
-      </header>
-
-      {/* MASCOT DIALOGUE GUIDANCE */}
-      <div className="w-full max-w-sm mx-auto flex items-center justify-center gap-3 my-2 shrink-0">
-        <NutriSprout size={72} mood={mascotMood} showShadow={false} />
-        <SpeechBubble message={mascotDialogue} className="flex-1" />
+        <span className="text-xs font-semibold tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+          otakatik
+        </span>
       </div>
 
-      {/* STEP CONTENT BODY */}
-      <main className="w-full max-w-sm mx-auto flex-1 flex flex-col justify-center py-3">
-        {/* LANGKAH 1: NAMA & AVATAR */}
-        {step === 1 && (
-          <div className="space-y-4 animate-in fade-in duration-normal">
-            <TextField
-              label="Nama Lengkap Anda"
-              placeholder="Contoh: Ibu Siti Rahma"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              helperText="Gunakan nama yang mudah dikenali kader atau dokter."
-              error={fullName.length > 0 && fullName.length < 2 ? 'Nama minimal 2 huruf' : undefined}
-              success={fullName.length >= 2}
-            />
+      {renderProgressBar()}
 
-            <div>
-              <div className="text-xs font-bold text-slate-900 mb-2">Pilih Avatar Ceria:</div>
-              <AvatarPicker
-                selectedId={selectedAvatar}
-                onSelect={(id) => {
-                  soundSynth.playPop();
-                  setSelectedAvatar(id);
-                }}
-              />
-            </div>
+      {/* STEP 1: INTRO 1 (Hi there! I'm Kerro!) */}
+      {step === 1 && (
+        <div className="w-full max-w-xs mx-auto flex flex-col items-center justify-center my-auto py-4">
+          {/* Speech Bubble */}
+          <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl px-5 py-3 mb-6 text-center animate-fade-in">
+            <span className="text-base sm:text-lg font-bold text-slate-800">
+              Hi there! I&apos;m Kerro!
+            </span>
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white border-b border-r border-slate-200 rotate-45" />
           </div>
-        )}
 
-        {/* LANGKAH 2: PERAN & KODE UNDANGAN */}
-        {step === 2 && (
-          <div className="space-y-3.5 animate-in fade-in duration-normal">
-            <div className="text-xs font-bold text-slate-900 mb-1">Pilih Peran Anda:</div>
+          {/* Kerro Waving */}
+          <div className="animate-float-breath mb-8">
+            <img
+              src="/mascot/kerro_pose5_wave.png"
+              alt="Kerro melambaikan tangan"
+              className="w-40 h-40 sm:w-48 sm:h-48 object-contain drop-shadow-md"
+            />
+          </div>
 
-            {/* Role Option 1: Orang Tua */}
+          {/* Button */}
+          <button
+            type="button"
+            onClick={handleNext}
+            className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer"
+          >
+            CONTINUE
+          </button>
+        </div>
+      )}
+
+      {/* STEP 2: INTRO 2 (Just 3 quick games...) */}
+      {step === 2 && (
+        <div className="w-full max-w-xs mx-auto flex flex-col items-center justify-center my-auto py-4">
+          {/* Speech Bubble */}
+          <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl px-5 py-3.5 mb-6 text-center max-w-[270px] animate-fade-in">
+            <span className="text-xs sm:text-sm font-bold text-slate-800 leading-snug">
+              Just 3 quick games to check your child&apos;s superpowers!
+            </span>
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white border-b border-r border-slate-200 rotate-45" />
+          </div>
+
+          {/* Kerro Winking */}
+          <div className="animate-float-breath mb-8">
+            <img
+              src="/mascot/kerro_pose3_wink.png"
+              alt="Kerro mengedipkan mata"
+              className="w-40 h-40 sm:w-48 sm:h-48 object-contain drop-shadow-md"
+            />
+          </div>
+
+          {/* Button */}
+          <button
+            type="button"
+            onClick={handleNext}
+            className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer"
+          >
+            CONTINUE
+          </button>
+        </div>
+      )}
+
+      {/* STEP 3: ROLE SELECTION (Who are you exploring for?) */}
+      {step === 3 && (
+        <div className="w-full max-w-sm mx-auto flex flex-col justify-between my-auto py-2">
+          <div className="flex flex-col gap-3 mb-6">
+            <h2 className="text-lg font-extrabold text-slate-900 mb-1">
+              Pilih Peran Anda
+            </h2>
+
+            {/* Parent Card */}
             <div
               onClick={() => {
                 soundSynth.playPop();
                 setSelectedRole('parent');
-                setCodeError(undefined);
-                setCodeSuccess(undefined);
               }}
-              className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between ${
+              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
                 selectedRole === 'parent'
-                  ? 'bg-amber-50/80 border-nutri-teal-700 shadow-sm'
-                  : 'bg-white border-slate-200 hover:border-slate-300'
+                  ? 'border-[#2F9E44] bg-emerald-50/50 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                  <Heart className="w-5 h-5 fill-amber-600 text-amber-600" />
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700">
+                  <Heart className="w-5 h-5" />
                 </div>
-                <div className="text-left">
-                  <div className="text-sm font-bold text-slate-900">Orang Tua / Wali</div>
-                  <div className="text-[11px] text-slate-500">Akses pemantauan gizi buah hati keluarga</div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Parent / Family</h3>
+                  <p className="text-xs text-slate-500">Tracking my child&apos;s healthy growth</p>
                 </div>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                Publik
-              </span>
+              {selectedRole === 'parent' && (
+                <div className="w-6 h-6 rounded-full bg-[#2F9E44] flex items-center justify-center text-white">
+                  <Check className="w-4 h-4" />
+                </div>
+              )}
             </div>
 
-            {/* Role Option 2: Kader Posyandu */}
+            {/* Cadre Card */}
             <div
               onClick={() => {
                 soundSynth.playPop();
                 setSelectedRole('cadre');
-                setCodeError(undefined);
-                setCodeSuccess(undefined);
-                setInviteCode('');
               }}
-              className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between ${
+              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
                 selectedRole === 'cadre'
-                  ? 'bg-teal-50/80 border-nutri-teal-700 shadow-sm'
-                  : 'bg-white border-slate-200 hover:border-slate-300'
+                  ? 'border-[#2F9E44] bg-emerald-50/50 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-700">
                   <Users className="w-5 h-5" />
                 </div>
-                <div className="text-left">
-                  <div className="text-sm font-bold text-slate-900">Kader Posyandu</div>
-                  <div className="text-[11px] text-slate-500">Skrining &amp; penimbangan balita wilayah</div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Posyandu Cadre</h3>
+                  <p className="text-xs text-slate-500">Weighing & screening session work</p>
                 </div>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                Perlu Kode
-              </span>
+              {selectedRole === 'cadre' && (
+                <div className="w-6 h-6 rounded-full bg-[#2F9E44] flex items-center justify-center text-white">
+                  <Check className="w-4 h-4" />
+                </div>
+              )}
             </div>
 
-            {/* Role Option 3: Dokter / Tenaga Medis */}
+            {/* Doctor Card */}
             <div
               onClick={() => {
                 soundSynth.playPop();
                 setSelectedRole('doctor');
-                setCodeError(undefined);
-                setCodeSuccess(undefined);
-                setInviteCode('');
               }}
-              className={`p-3.5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between ${
+              className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${
                 selectedRole === 'doctor'
-                  ? 'bg-cyan-50/80 border-nutri-teal-700 shadow-sm'
-                  : 'bg-white border-slate-200 hover:border-slate-300'
+                  ? 'border-[#2F9E44] bg-emerald-50/50 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-cyan-100 text-cyan-700 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
                   <Stethoscope className="w-5 h-5" />
                 </div>
-                <div className="text-left">
-                  <div className="text-sm font-bold text-slate-900">Dokter / Petugas Gizi</div>
-                  <div className="text-[11px] text-slate-500">Triase rujukan &amp; intervensi klinis FKTP</div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Puskesmas Doctor</h3>
+                  <p className="text-xs text-slate-500">Clinical referral & triage decision</p>
                 </div>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                Perlu Kode
-              </span>
+              {selectedRole === 'doctor' && (
+                <div className="w-6 h-6 rounded-full bg-[#2F9E44] flex items-center justify-center text-white">
+                  <Check className="w-4 h-4" />
+                </div>
+              )}
             </div>
-
-            {/* Kode Undangan Field for Kader or Dokter */}
-            {selectedRole !== 'parent' && (
-              <div className="pt-2 p-3 bg-white rounded-xl border border-slate-200 space-y-2">
-                <TextField
-                  label={`Kode Undangan ${selectedRole === 'cadre' ? 'Kader' : 'Dokter'}`}
-                  placeholder={selectedRole === 'cadre' ? 'Contoh: POSYANDU-2026' : 'Contoh: DOKTER-2026'}
-                  value={inviteCode}
-                  onChange={(e) => {
-                    const val = e.target.value.toUpperCase();
-                    setInviteCode(val);
-                    handleVerifyCode(val, selectedRole);
-                  }}
-                  error={codeError}
-                  success={Boolean(codeSuccess)}
-                  helperText={
-                    codeSuccess
-                      ? `Terverifikasi untuk: ${codeSuccess}`
-                      : `Gunakan kode resmi dari Puskesmas. (Demo: ${
-                          selectedRole === 'cadre' ? 'POSYANDU-2026' : 'DOKTER-2026'
-                        })`
-                  }
-                  leftIcon={<ShieldCheck className="w-4 h-4" />}
-                />
-              </div>
-            )}
           </div>
-        )}
 
-        {/* LANGKAH 3: DATA DASAR KONTEKSTUAL */}
-        {step === 3 && (
-          <div className="space-y-4 animate-in fade-in duration-normal">
-            {selectedRole === 'parent' && (
-              <>
-                <TextField
-                  label="Nama Panggilan Balita"
-                  placeholder="Contoh: Anisa"
+          {/* Kerro with speech bubble at bottom right */}
+          <div className="flex items-center justify-end gap-3 mb-6">
+            <div className="relative bg-white border border-slate-200 shadow-sm rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-700">
+              Who are you exploring for?
+              <div className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-3 bg-white border-t border-r border-slate-200 rotate-45" />
+            </div>
+            <img
+              src="/mascot/kerro_pose1_smile.png"
+              alt="Kerro senyum"
+              className="w-12 h-12 object-contain"
+            />
+          </div>
+
+          {/* Continue Button */}
+          <button
+            type="button"
+            onClick={handleNext}
+            className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer"
+          >
+            CONTINUE
+          </button>
+        </div>
+      )}
+
+      {/* STEP 4: "Kenalan dulu, yuk!" (Hanya Nama, Tanpa Avatar) */}
+      {step === 4 && (
+        <div className="w-full max-w-sm mx-auto flex flex-col justify-between my-auto py-2">
+          {/* Top Kerro with speech bubble */}
+          <div className="flex items-center gap-3 mb-6">
+            <img
+              src="/mascot/kerro_pose1_smile.png"
+              alt="Kerro senyum"
+              className="w-14 h-14 object-contain shrink-0"
+            />
+            <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl px-4 py-2.5 text-xs text-slate-700 leading-snug">
+              Halo! Aku Kero si Katak! Siap temani petualangan sehatmu! 🐸
+              <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-white border-b border-l border-slate-200 rotate-45" />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 mb-8">
+            <h2 className="text-xl font-extrabold text-slate-900">
+              Kenalan dulu, yuk!
+            </h2>
+
+            <div className="flex flex-col gap-1.5 text-left">
+              <label className="text-xs font-bold text-slate-700">
+                Siapa namamu?
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Nama akun pengguna (hanya huruf dan spasi)"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={!isStep4Valid}
+            className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            LANJUTKAN
+          </button>
+        </div>
+      )}
+
+      {/* STEP 5: ABOUT YOUR LITTLE ONE / CREDENTIALS SETUP */}
+      {step === 5 && (
+        <div className="w-full max-w-sm mx-auto flex flex-col justify-between my-auto py-1">
+          {/* Top Kerro with speech bubble */}
+          <div className="flex items-center gap-3 mb-4">
+            <img
+              src="/mascot/kerro_pose1_smile.png"
+              alt="Kerro senyum"
+              className="w-12 h-12 object-contain shrink-0"
+            />
+            <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl px-3.5 py-2 text-xs text-slate-700 leading-snug">
+              Nice to meet you, {fullName || 'Ayah/Bunda'}! Mari lengkapi profil untuk kalibrasi skrining.
+              <div className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-3 bg-white border-b border-l border-slate-200 rotate-45" />
+            </div>
+          </div>
+
+          {submitError && (
+            <div className="w-full mb-3 p-3 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+              <span>{submitError}</span>
+            </div>
+          )}
+
+          {/* PARENT SPECIFIC FIELDS */}
+          {selectedRole === 'parent' ? (
+            <div className="flex flex-col gap-3.5 mb-5 text-left">
+              <h2 className="text-lg font-extrabold text-slate-900">
+                About your little one
+              </h2>
+
+              {/* Gender Selector */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundSynth.playPop();
+                    setChildGender('L');
+                  }}
+                  className={`flex-1 py-3 px-4 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${
+                    childGender === 'L'
+                      ? 'border-[#2F9E44] bg-emerald-50'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <span className="text-2xl">👦</span>
+                  <span className="text-xs font-bold text-slate-700">Boy</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundSynth.playPop();
+                    setChildGender('P');
+                  }}
+                  className={`flex-1 py-3 px-4 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${
+                    childGender === 'P'
+                      ? 'border-[#2F9E44] bg-emerald-50'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <span className="text-2xl">👧</span>
+                  <span className="text-xs font-bold text-slate-700">Girl</span>
+                </button>
+              </div>
+
+              {/* Child Name */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-xs font-bold text-slate-700">
+                  Siapa nama si kecil?
+                </label>
+                <input
+                  type="text"
                   value={childName}
                   onChange={(e) => setChildName(e.target.value)}
-                  error={childName.length > 0 && childName.length < 2 ? 'Minimal 2 huruf' : undefined}
-                  success={childName.length >= 2}
+                  placeholder="Nama si kecil"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                 />
+              </div>
 
-                <div>
-                  <div className="text-xs font-bold text-slate-900 mb-1.5">Jenis Kelamin:</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setChildGender('L')}
-                      className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
-                        childGender === 'L'
-                          ? 'bg-sky-50 border-sky-600 text-sky-800'
-                          : 'bg-white border-slate-200 text-slate-700'
-                      }`}
-                    >
-                      Laki-laki 👦
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setChildGender('P')}
-                      className={`py-2 px-3 rounded-lg border text-xs font-bold transition-all ${
-                        childGender === 'P'
-                          ? 'bg-rose-50 border-rose-600 text-rose-800'
-                          : 'bg-white border-slate-200 text-slate-700'
-                      }`}
-                    >
-                      Perempuan 👧
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label htmlFor="child-birth-date" className="text-xs font-bold text-slate-900">
-                      Tanggal Lahir Balita:
-                    </label>
-                    <span className="text-xs font-extrabold text-teal-800">
-                      {calculatedAgeMonths} Bulan
-                    </span>
-                  </div>
+              {/* Birth Date */}
+              <div className="flex flex-col gap-1 text-left">
+                <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                  <span>Tanggal lahir</span>
+                  <span className="text-[11px] text-emerald-700 font-semibold">
+                    {calculatedAgeMonths > 0 ? `${calculatedAgeMonths} bulan` : ''}
+                  </span>
+                </label>
+                <div className="relative w-full">
                   <input
-                    id="child-birth-date"
                     type="date"
                     max={todayStr}
                     value={childBirthDate}
-                    onChange={(e) => {
-                      setChildBirthDate(e.target.value);
-                      setSubmitError(null);
-                    }}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600"
+                    onChange={(e) => setChildBirthDate(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                   />
-                  {!isChildAgeValid && childBirthDate && (
-                    <p className="text-[11px] font-bold text-rose-600 mt-1.5 flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>Usia anak harus 24-59 bulan untuk skrining ini (saat ini {calculatedAgeMonths} bulan).</span>
-                    </p>
-                  )}
+                  <Calendar className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
-
-                {submitError && (
-                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2 animate-in fade-in">
-                    <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                    <span className="leading-snug">{submitError}</span>
-                  </div>
+                {!isChildAgeValid && childBirthDate && (
+                  <p className="text-[11px] text-amber-600 font-medium">
+                    ⚠️ Usia anak harus 24-59 bulan (saat ini {calculatedAgeMonths} bulan).
+                  </p>
                 )}
-              </>
-            )}
+              </div>
 
-            {selectedRole === 'cadre' && (
-              <>
-                <TextField
-                  label="Nama Posyandu Penugasan"
-                  value={cadrePosyandu}
-                  onChange={(e) => setCadrePosyandu(e.target.value)}
-                  helperText="Sesuai SK penugasan dari Puskesmas pembina."
+              {/* Account Credentials */}
+              <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                <span className="text-xs font-bold text-slate-800">
+                  Atur Akun & Kata Sandi (Opsional)
+                </span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Email akun (contoh: bunda@gmail.com)"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
                 />
-                <TextField
-                  label="Wilayah RW / Dusun"
-                  value={cadreRw}
-                  onChange={(e) => setCadreRw(e.target.value)}
-                  placeholder="Contoh: RW 03"
-                />
-              </>
-            )}
+                <div className="relative w-full">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Kata sandi (default: password123)"
+                    className="w-full px-4 py-2.5 pr-10 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 p-1"
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : selectedRole === 'cadre' ? (
+            /* CADRE SPECIFIC FIELDS */
+            <div className="flex flex-col gap-3.5 mb-5 text-left">
+              <h2 className="text-lg font-extrabold text-slate-900">
+                Data Posyandu & Verifikasi
+              </h2>
 
-            {selectedRole === 'doctor' && (
-              <>
-                <TextField
-                  label="Fasilitas Pelayanan Kesehatan (FKTP)"
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-700">Nama Posyandu & RW</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={cadrePosyandu}
+                    onChange={(e) => setCadrePosyandu(e.target.value)}
+                    placeholder="Posyandu Melati 1"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900"
+                  />
+                  <input
+                    type="text"
+                    value={cadreRw}
+                    onChange={(e) => setCadreRw(e.target.value)}
+                    placeholder="RW 03"
+                    className="w-20 px-3 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-700">Kode Undangan Kader</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value)}
+                    placeholder="KADER-MLT01"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyCode(inviteCode, 'cadre')}
+                    disabled={isVerifyingCode}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold"
+                  >
+                    Verifikasi
+                  </button>
+                </div>
+                {codeSuccess && <p className="text-[11px] text-emerald-600">✅ {codeSuccess}</p>}
+                {codeError && <p className="text-[11px] text-rose-600">❌ {codeError}</p>}
+                <p className="text-[10px] text-slate-400">Kode demo: KADER-MLT01</p>
+              </div>
+            </div>
+          ) : (
+            /* DOCTOR SPECIFIC FIELDS */
+            <div className="flex flex-col gap-3.5 mb-5 text-left">
+              <h2 className="text-lg font-extrabold text-slate-900">
+                Data Fasilitas Kesehatan & SIP
+              </h2>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-700">Nama Puskesmas/FKTP</label>
+                <input
+                  type="text"
                   value={doctorFaskes}
                   onChange={(e) => setDoctorFaskes(e.target.value)}
-                  helperText="Puskesmas atau Klinik rujukan stunting."
+                  placeholder="Puskesmas Tegalrejo"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900"
                 />
-                <TextField
-                  label="Nomor Induk Pegawai (NIP / SIP)"
-                  placeholder="Contoh: 198902142015031002"
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-700">Nomor SIP / NIP</label>
+                <input
+                  type="text"
                   value={doctorNip}
                   onChange={(e) => setDoctorNip(e.target.value)}
-                  error={doctorNip.length > 0 && doctorNip.length < 5 ? 'Minimal 5 karakter' : undefined}
-                  success={doctorNip.length >= 5}
+                  placeholder="19850101 201001 1 001"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900"
                 />
-              </>
-            )}
-          </div>
-        )}
-      </main>
+              </div>
 
-      {/* BOTTOM ACTION BUTTON */}
-      <footer className="w-full max-w-sm mx-auto pt-4 shrink-0">
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          disabled={
-            step === 1
-              ? !isStep1Valid
-              : step === 2
-              ? !isStep2Valid || isVerifyingCode
-              : !isStep3Valid || isSubmitting
-          }
-          isLoading={isSubmitting}
-          onClick={handleNext}
-          icon={step === 3 ? <Check className="w-5 h-5 stroke-[2.5]" /> : <ArrowRight className="w-5 h-5" />}
-          iconPosition="right"
-        >
-          {step === 3 ? 'Selesai & Masuk' : 'Lanjut'}
-        </Button>
-      </footer>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-700">Kode Undangan Dokter</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value)}
+                    placeholder="DOKTER-FKTP"
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyCode(inviteCode, 'doctor')}
+                    disabled={isVerifyingCode}
+                    className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
+                  >
+                    Verifikasi
+                  </button>
+                </div>
+                {codeSuccess && <p className="text-[11px] text-emerald-600">✅ {codeSuccess}</p>}
+                {codeError && <p className="text-[11px] text-rose-600">❌ {codeError}</p>}
+                <p className="text-[10px] text-slate-400">Kode demo: DOKTER-FKTP</p>
+              </div>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            type="button"
+            onClick={handleFinalSubmit}
+            disabled={!isStep5Valid || isSubmitting}
+            className="w-full py-3.5 px-6 rounded-full bg-[#2F9E44] hover:bg-[#2b8a3e] active:scale-[0.98] text-white font-bold text-sm tracking-wide shadow-md transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              'LANJUTKAN'
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
