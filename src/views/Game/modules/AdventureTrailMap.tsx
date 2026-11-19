@@ -51,10 +51,10 @@ const ISLANDS: IslandNode[] = [
   },
   {
     id: 2,
-    title: 'Kebun Buah Ceria',
-    subtitle: 'Pilah Buah Segar & Cermat',
+    title: 'Pesta Makan Kerro',
+    subtitle: 'Suapi Makanan Sehat & Tahan Junk Food',
     nutrient: 'Seng (Zn)',
-    emoji: '🍎',
+    emoji: '🍽️',
     colorScheme: {
       activeBg: 'bg-amber-500 text-white',
       activeBorder: 'border-amber-400 ring-4 ring-amber-200',
@@ -130,7 +130,7 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
       return `Halo ${childName}! Ayo mulai dari Pulau Balon Kilat. Sentuh balon begitu keluar ya!`;
     }
     if (currentActiveStage === 2) {
-      return `Keren! Sekarang ayo ke Kebun Buah Ceria. Petik buah segar, jangan sampai kena ulat!`;
+      return `Keren! Sekarang ayo ke Pesta Makan Kerro. Suapi makanan sehat, tahan kalau ada barang aneh!`;
     }
     if (currentActiveStage === 3) {
       return `Tinggal satu pulau lagi! Ayo ke Lembah Jejak Hewan dan sentuh urutan terbalik!`;

@@ -23,12 +23,12 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
     },
     {
       id: 'g2',
-      title: 'Kebun Buah Ceria',
-      desc: 'Skrining kognitif pengenalan warna & bentuk buah',
+      title: 'Pesta Makan Kerro',
+      desc: 'Skrining kontrol inhibisi & pemilihan makanan sehat',
       status: 'active' as const,
       stars: 0,
       score: 0,
-      icon: '🍎',
+      icon: '🍽️',
     },
     {
       id: 'g3',
@@ -86,7 +86,7 @@ export const AdventureTrailMap: React.FC<AdventureTrailMapProps> = ({
             <div className="w-14 h-2.5 rounded-full bg-slate-200/60 mx-auto -mt-1 blur-[1px]" />
           </div>
           <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-3 py-2 text-left text-xs font-extrabold text-[#2B8A44]">
-            "Yuk lanjut ke Kebun Buah Ceria!"
+            "Yuk lanjut ke Pesta Makan Kerro!"
           </div>
         </div>
       </div>
