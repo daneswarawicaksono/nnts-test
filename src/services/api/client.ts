@@ -12,6 +12,69 @@ const VALID_INVITATION_CODES: Record<string, { role: UserRole; institutionName: 
   'DOKTER-2026': { role: 'doctor', institutionName: 'Puskesmas Tegalrejo' },
 };
 
+// Preset demo accounts for rapid testing & offline fallback
+export const PRESET_ACCOUNTS: Record<
+  string,
+  {
+    role: UserRole;
+    fullName: string;
+    username: string;
+    email: string;
+    password: string;
+    posyanduId?: string;
+    faskesId?: string;
+  }
+> = {
+  'orangtua@posyandu.id': {
+    role: 'parent',
+    fullName: 'Ibu Siti Rahma',
+    username: 'parent',
+    email: 'orangtua@posyandu.id',
+    password: 'password123',
+    posyanduId: 'POS-DIY-MLT01',
+  },
+  parent: {
+    role: 'parent',
+    fullName: 'Ibu Siti Rahma',
+    username: 'parent',
+    email: 'orangtua@posyandu.id',
+    password: 'password123',
+    posyanduId: 'POS-DIY-MLT01',
+  },
+  'kader@posyandu.id': {
+    role: 'cadre',
+    fullName: 'Kader Posyandu Melati',
+    username: 'kader',
+    email: 'kader@posyandu.id',
+    password: 'password123',
+    posyanduId: 'POS-DIY-MLT01',
+  },
+  kader: {
+    role: 'cadre',
+    fullName: 'Kader Posyandu Melati',
+    username: 'kader',
+    email: 'kader@posyandu.id',
+    password: 'password123',
+    posyanduId: 'POS-DIY-MLT01',
+  },
+  'dokter@puskesmas.id': {
+    role: 'doctor',
+    fullName: 'dr. Budi Santoso, Sp.A',
+    username: 'dokter',
+    email: 'dokter@puskesmas.id',
+    password: 'password123',
+    faskesId: 'P3404010101',
+  },
+  dokter: {
+    role: 'doctor',
+    fullName: 'dr. Budi Santoso, Sp.A',
+    username: 'dokter',
+    email: 'dokter@puskesmas.id',
+    password: 'password123',
+    faskesId: 'P3404010101',
+  },
+};
+
 export interface CreateSubjectPayload {
   child_name: string;
   birth_date: string; // YYYY-MM-DD
@@ -52,7 +115,10 @@ export interface PosyanduSubjectItem {
 export interface RegisterPayload {
   role: UserRole;
   fullName: string;
-  avatarId: string;
+  avatarId?: string;
+  username?: string;
+  email?: string;
+  password?: string;
   invitationCode?: string;
   childData?: {
     childName: string;
@@ -174,11 +240,143 @@ class ApiClient {
     return { valid: true, message: 'Kode valid dan terverifikasi.', institution: entry.institutionName };
   }
 
-  // Complete registration & issue session token
-  async registerUser(payload: RegisterPayload): Promise<AuthSession> {
-    await new Promise((r) => setTimeout(r, 300));
+  getLocalAccounts(): any[] {
+    try {
+      const raw = localStorage.getItem('nnts_registered_accounts');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
 
-    // If cadre or doctor, enforce invitation code
+  saveLocalAccount(acc: any) {
+    try {
+      const list = this.getLocalAccounts();
+      const idx = list.findIndex(
+        (a) =>
+          (acc.email && a.email?.toLowerCase() === acc.email?.toLowerCase()) ||
+          (acc.username && a.username?.toLowerCase() === acc.username?.toLowerCase())
+      );
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], ...acc };
+      } else {
+        list.push(acc);
+      }
+      localStorage.setItem('nnts_registered_accounts', JSON.stringify(list));
+    } catch (e) {
+      console.warn('[Storage] Gagal menyimpan akun lokal:', e);
+    }
+  }
+
+  // ── Login Pengguna dengan Deteksi Peran Otomatis ───────────
+  async login(credentials: { emailOrUsername: string; password: string }): Promise<AuthSession> {
+    const rawInput = credentials.emailOrUsername.trim();
+    const rawPass = credentials.password;
+    if (!rawInput || !rawPass) {
+      throw new Error('Email/Username dan kata sandi wajib diisi');
+    }
+
+    // 1. Coba login ke Backend API
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email_or_username: rawInput,
+          password: rawPass,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const role = (data.user?.role || 'parent') as UserRole;
+        const session: AuthSession = {
+          token: data.token,
+          user: {
+            id: data.user.id,
+            fullName: data.user.full_name || data.user.username,
+            role,
+            avatarId: 'av-1',
+            posyanduId: data.user.posyandu_id,
+            faskesId: data.user.fktp_code,
+          },
+        };
+        this.currentSession = session;
+        this.sessionToken = session.token;
+        sessionStorage.setItem('nnts_session', JSON.stringify(session));
+        return session;
+      }
+
+      if (res.status === 401) {
+        throw new Error('Email/Username atau kata sandi tidak sesuai');
+      }
+    } catch (err: any) {
+      if (err.message === 'Email/Username atau kata sandi tidak sesuai') {
+        throw err;
+      }
+      console.warn('[Auth] Backend API offline/fallback ke preset dan akun lokal:', err.message);
+    }
+
+    // 2. Fallback ke Preset Demo Accounts
+    const inputKey = rawInput.toLowerCase();
+    const preset = PRESET_ACCOUNTS[inputKey];
+    if (preset) {
+      if (rawPass === 'password123' || rawPass === preset.password) {
+        const session: AuthSession = {
+          token: `demo-${preset.role}`,
+          user: {
+            id: `usr-${preset.role}-demo`,
+            fullName: preset.fullName,
+            role: preset.role,
+            avatarId: 'av-1',
+            posyanduId: preset.posyanduId,
+            faskesId: preset.faskesId,
+          },
+        };
+        this.currentSession = session;
+        this.sessionToken = session.token;
+        sessionStorage.setItem('nnts_session', JSON.stringify(session));
+        return session;
+      } else {
+        throw new Error('Email/Username atau kata sandi tidak sesuai');
+      }
+    }
+
+    // 3. Fallback ke Akun Lokal yang terdaftar di perangkat
+    const localAccounts = this.getLocalAccounts();
+    const matched = localAccounts.find(
+      (a: any) =>
+        a.email?.toLowerCase() === inputKey || a.username?.toLowerCase() === inputKey
+    );
+    if (matched) {
+      if (matched.password === rawPass) {
+        const session: AuthSession = {
+          token: matched.token || `local-jwt-${Date.now()}`,
+          user: {
+            id: matched.id,
+            fullName: matched.fullName,
+            role: matched.role,
+            avatarId: 'av-1',
+            posyanduId: matched.posyanduId,
+            faskesId: matched.faskesId,
+            childData: matched.childData,
+          },
+        };
+        this.currentSession = session;
+        this.sessionToken = session.token;
+        sessionStorage.setItem('nnts_session', JSON.stringify(session));
+        return session;
+      } else {
+        throw new Error('Email/Username atau kata sandi tidak sesuai');
+      }
+    }
+
+    throw new Error('Akun tidak ditemukan. Silakan periksa kembali atau daftar baru.');
+  }
+
+  // ── Registrasi Akun Pengguna Baru ──────────────────────────
+  async registerUser(payload: RegisterPayload): Promise<AuthSession> {
+    // Verifikasi kode undangan untuk peran kader & dokter
     if (payload.role !== 'parent') {
       const codeCheck = await this.verifyInvitationCode(payload.invitationCode || '', payload.role);
       if (!codeCheck.valid) {
@@ -186,22 +384,107 @@ class ApiClient {
       }
     }
 
-    const session: AuthSession = {
-      token: `nnts-jwt-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      user: {
-        id: `usr-${Date.now()}`,
-        fullName: payload.fullName,
-        role: payload.role,
-        avatarId: payload.avatarId,
-        posyanduId: payload.cadreData ? 'POSYANDU-MLT-01' : undefined,
-        faskesId: payload.doctorData ? 'P3404010101' : undefined,
-        childData: payload.childData,
-      },
-    };
+    const cleanUsername =
+      payload.username ||
+      payload.fullName.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 15) ||
+      `user_${Date.now()}`;
+    const cleanEmail =
+      payload.email ||
+      `${cleanUsername}@posyandu.id`;
+    const cleanPassword = payload.password || 'password123';
+
+    let remoteSuccess = false;
+    let remoteSession: AuthSession | null = null;
+
+    // 1. Coba registrasi ke server API
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: cleanUsername,
+          email: cleanEmail,
+          password: cleanPassword,
+          full_name: payload.fullName,
+          role: payload.role,
+          posyandu_id: 'POS-DIY-MLT01',
+          fktp_code: 'P3404010101',
+          child_data:
+            payload.role === 'parent' && payload.childData
+              ? {
+                  child_name: payload.childData.childName,
+                  birth_date: payload.childData.birthDate,
+                  gender: payload.childData.gender,
+                }
+              : undefined,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const childRes = data.child;
+        if (payload.childData && childRes?.pseudo_uuid) {
+          payload.childData.subjectId = childRes.pseudo_uuid;
+        }
+
+        remoteSession = {
+          token: data.token,
+          user: {
+            id: data.user.id,
+            fullName: data.user.full_name || payload.fullName,
+            role: data.user.role as UserRole,
+            avatarId: payload.avatarId || 'av-1',
+            posyanduId: data.user.posyandu_id,
+            faskesId: data.user.fktp_code,
+            childData: payload.childData,
+          },
+        };
+        remoteSuccess = true;
+      } else if (res.status === 409) {
+        throw new Error('Email atau username sudah terdaftar');
+      }
+    } catch (err: any) {
+      if (err.message === 'Email atau username sudah terdaftar') {
+        throw err;
+      }
+      console.warn('[Register] API server offline/fallback ke penyimpanan lokal:', err.message);
+    }
+
+    // 2. Bangun sesi
+    const session: AuthSession =
+      remoteSuccess && remoteSession
+        ? remoteSession
+        : {
+            token: `nnts-jwt-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+            user: {
+              id: `usr-${Date.now()}`,
+              fullName: payload.fullName,
+              role: payload.role,
+              avatarId: payload.avatarId || 'av-1',
+              posyanduId: payload.cadreData ? 'POS-DIY-MLT01' : undefined,
+              faskesId: payload.doctorData ? 'P3404010101' : undefined,
+              childData: payload.childData,
+            },
+          };
 
     this.currentSession = session;
     this.sessionToken = session.token;
     sessionStorage.setItem('nnts_session', JSON.stringify(session));
+
+    // Simpan ke daftar akun lokal untuk kemudahan login offline
+    this.saveLocalAccount({
+      id: session.user.id,
+      fullName: payload.fullName,
+      username: cleanUsername,
+      email: cleanEmail,
+      password: cleanPassword,
+      role: payload.role,
+      posyanduId: session.user.posyanduId,
+      faskesId: session.user.faskesId,
+      childData: payload.childData,
+      token: session.token,
+    });
+
     return session;
   }
 
@@ -245,7 +528,7 @@ class ApiClient {
 
   // ── Registrasi Anak Baru ke Server ──────────────────────────
   async createSubject(payload: CreateSubjectPayload): Promise<CreateSubjectResponse> {
-    const authHeader = 'demo-kader';
+    const authHeader = this.sessionToken || 'demo-kader';
     let res: Response;
     try {
       res = await fetch(`${API_BASE_URL}/api/v1/subjects`, {
@@ -295,7 +578,7 @@ class ApiClient {
     posyanduId: string = 'POS-DIY-MLT01',
     limit?: number
   ): Promise<PosyanduSubjectItem[]> {
-    const authHeader = 'demo-kader';
+    const authHeader = this.sessionToken || 'demo-kader';
     let res: Response;
     try {
       const url = new URL(

@@ -1,18 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import {
-  LogOut,
   FileJson,
   Copy,
   Check,
   X,
-  Stethoscope,
 } from 'lucide-react';
 import { soundSynth } from '../../services/audio/synth';
 import type { AuthSession } from '../../types/role';
 
-import { DoctorKPIBar } from './components/DoctorKPIBar';
-import { DoctorPatientTable } from './components/DoctorPatientTable';
-import { DoctorClinicalDetailPane } from './components/DoctorClinicalDetailPane';
+import { DoctorSidebar } from './components/DoctorSidebar';
+import { DoctorTopBar } from './components/DoctorTopBar';
+import { DoctorAnalyticsCards } from './components/DoctorAnalyticsCards';
+import { DoctorFullWidthTable } from './components/DoctorFullWidthTable';
+import { DoctorSlideOverDrawer } from './components/DoctorSlideOverDrawer';
 
 export interface DoctorDashboardProps {
   session: AuthSession;
@@ -76,9 +76,13 @@ const PRESET_PATIENTS: ClinicalPatient[] = [
     paleConjunctiva: true,
     angularStomatitis: true,
     skinDryness: false,
-    supplementNotes: ['Sirup Besi Elemental 3 mg/kgBB/hari (6 pekan)', 'Suplementasi Zinc 20 mg/hari (14 hari)'],
+    supplementNotes: [
+      'Sirup Besi Elemental 3 mg/kgBB/hari (6 pekan)',
+      'Suplementasi Zinc 20 mg/hari (14 hari)',
+    ],
     labReferral: 'Pemeriksaan Serum Ferritin & Darah Lengkap (Hb)',
-    clinicalNotes: 'Terindikasi defisiensi zat besi fungsional nyata dengan penurunan transmisi dopaminergik basal dan tanda konjungtiva anemis.',
+    clinicalNotes:
+      'Terindikasi defisiensi zat besi fungsional nyata dengan penurunan transmisi dopaminergik basal dan tanda konjungtiva anemis.',
   },
   {
     id: 'P-MWR-02',
@@ -102,9 +106,13 @@ const PRESET_PATIENTS: ClinicalPatient[] = [
     paleConjunctiva: false,
     angularStomatitis: true,
     skinDryness: true,
-    supplementNotes: ['Taburia MNP 1 sachet per 2 hari', 'Edukasi PMBA pangan hewani kaya seng'],
+    supplementNotes: [
+      'Taburia MNP 1 sachet per 2 hari',
+      'Edukasi PMBA pangan hewani kaya seng',
+    ],
     labReferral: 'Pemantauan berkala 2 pekan di Posyandu',
-    clinicalNotes: 'Defisiensi seng subklinis ringan dengan kegagalan kontrol inhibisi motorik.',
+    clinicalNotes:
+      'Defisiensi seng subklinis ringan dengan kegagalan kontrol inhibisi motorik.',
   },
   {
     id: 'P-MLT-03',
@@ -132,20 +140,78 @@ const PRESET_PATIENTS: ClinicalPatient[] = [
     labReferral: 'Tidak memerlukan rujukan lanjutan',
     clinicalNotes: 'Tumbuh kembang optimal, atensi dan memori kerja sangat baik.',
   },
+  {
+    id: 'P-ANG-04',
+    childName: 'Bagas Aditya',
+    ageMonths: 30,
+    gender: 'L',
+    posyandu: 'Posyandu Anggrek 3',
+    rw: 'RW 02',
+    tier: 'Tier-2 Alert (Kuning)',
+    screenedAt: '31 Okt 2026',
+    latencyMs: 425,
+    accuracyRate: 72,
+    commissionErrors: 3,
+    memorySpan: 2,
+    weightKg: 11.8,
+    heightCm: 88.0,
+    muacCm: 12.5,
+    waz: -1.3,
+    haz: -1.6,
+    whz: -0.9,
+    paleConjunctiva: false,
+    angularStomatitis: false,
+    skinDryness: true,
+    supplementNotes: ['Konseling gizi seimbang & MPASI kaya protein'],
+    labReferral: 'Jadwalkan ulang skrining posyandu bulan berikutnya',
+    clinicalNotes: 'Perlu penguatan stimulasi visual motorik dan asupan mikronutrien harian.',
+  },
+  {
+    id: 'P-FLM-05',
+    childName: 'Aisyah Putri',
+    ageMonths: 36,
+    gender: 'P',
+    posyandu: 'Posyandu Flamboyan 4',
+    rw: 'RW 07',
+    tier: 'Normal (Hijau)',
+    screenedAt: '30 Okt 2026',
+    latencyMs: 320,
+    accuracyRate: 92,
+    commissionErrors: 0,
+    memorySpan: 3,
+    weightKg: 14.2,
+    heightCm: 96.5,
+    muacCm: 14.5,
+    waz: 0.5,
+    haz: 0.1,
+    whz: 0.7,
+    paleConjunctiva: false,
+    angularStomatitis: false,
+    skinDryness: false,
+    supplementNotes: ['Pertahankan pola asuh dan asupan bergizi'],
+    labReferral: 'Tidak ada rujukan',
+    clinicalNotes: 'Status gizi baik dan fungsi eksekutif sangat matang.',
+  },
 ];
 
 export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLogout }) => {
   const [patients, setPatients] = useState<ClinicalPatient[]>(PRESET_PATIENTS);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('P-MLT-01');
+  const [activeMenu, setActiveMenu] = useState('dashboard');
   const [searchQuery, setSearchQuery] = useState('');
   const [tierFilter, setTierFilter] = useState<'all' | 'Tier-1' | 'Tier-2' | 'Normal'>('all');
+  const [isDrawerOpen, setIsDrawerOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('drawer') === '1';
+    }
+    return false;
+  });
   const [showFhirModal, setShowFhirModal] = useState(false);
   const [fhirCopied, setFhirCopied] = useState(false);
 
-  // Mobile detail view toggle
-  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
-
-  const activePatient = patients.find((p) => p.id === selectedPatientId) || patients[0];
+  const activePatient = useMemo(() => {
+    return patients.find((p) => p.id === selectedPatientId) || patients[0];
+  }, [patients, selectedPatientId]);
 
   // Filtered patients list
   const filteredPatients = useMemo(() => {
@@ -168,7 +234,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
     });
   }, [patients, searchQuery, tierFilter]);
 
-  // Aggregated counts for KPI Bar
+  // Aggregated counts for Analytics Cards
   const kpiCounts = useMemo(() => {
     const total = patients.length;
     const tier1 = patients.filter((p) => p.tier.includes('Tier-1')).length;
@@ -179,7 +245,7 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
 
   const handleSelectPatient = (p: ClinicalPatient) => {
     setSelectedPatientId(p.id);
-    setIsMobileDetailOpen(true);
+    setIsDrawerOpen(true);
   };
 
   const handleSaveIntervention = (lab: string, notes: string) => {
@@ -203,7 +269,12 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
           fullUrl: `urn:uuid:patient-${activePatient.id}`,
           resource: {
             resourceType: 'Patient',
-            identifier: [{ system: 'https://fhir.kemkes.go.id/id/nik', value: `347101${activePatient.id}` }],
+            identifier: [
+              {
+                system: 'https://fhir.kemkes.go.id/id/nik',
+                value: `347101${activePatient.id}`,
+              },
+            ],
             name: [{ text: activePatient.childName }],
             gender: activePatient.gender === 'L' ? 'male' : 'female',
           },
@@ -214,7 +285,13 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
             resourceType: 'Observation',
             status: 'final',
             code: {
-              coding: [{ system: 'http://loinc.org', code: '70258-9', display: 'Reaction time test' }],
+              coding: [
+                {
+                  system: 'http://loinc.org',
+                  code: '70258-9',
+                  display: 'Reaction time test',
+                },
+              ],
             },
             valueQuantity: { value: activePatient.latencyMs, unit: 'ms' },
           },
@@ -225,7 +302,13 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
             resourceType: 'Observation',
             status: 'final',
             code: {
-              coding: [{ system: 'http://loinc.org', code: '56072-2', display: 'Mid upper arm circumference' }],
+              coding: [
+                {
+                  system: 'http://loinc.org',
+                  code: '56072-2',
+                  display: 'Mid upper arm circumference',
+                },
+              ],
             },
             valueQuantity: { value: activePatient.muacCm, unit: 'cm' },
           },
@@ -251,135 +334,67 @@ export const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ session, onLog
   };
 
   return (
-    <div className="w-full h-full min-h-[100dvh] bg-[#F8F9FA] flex flex-col justify-between font-sans select-none relative overflow-hidden">
-      {/* 1. TOP WORKSTATION HEADER */}
-      <header className="px-5 py-3.5 bg-white border-b border-[#E5E5E5] flex items-center justify-between z-10 shrink-0 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#34A853] text-white flex items-center justify-center shadow-[0_2px_0_#2B8A44] shrink-0">
-            <Stethoscope className="w-5 h-5 stroke-[2.2]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-black text-[#2B8A44] uppercase tracking-wider">
-                CDSS Faskes Tingkat Pertama
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                {session.user.faskesId || 'Puskesmas Tegalrejo'}
-              </span>
-              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                SATUSEHAT Aktif
-              </span>
-            </div>
-            <h1 className="text-sm sm:text-base font-black text-slate-900 leading-tight">
-              {session.user.fullName}
-            </h1>
-          </div>
-        </div>
+    <div className="w-full h-screen min-h-screen bg-[#F8F9FA] flex flex-row overflow-hidden font-sans select-none">
+      {/* 1. LEFT NAVIGATION SIDEBAR (QUICKEN WEB 37 STYLE) */}
+      <div className="hidden md:block shrink-0">
+        <DoctorSidebar
+          activeMenu={activeMenu}
+          onSelectMenu={setActiveMenu}
+          doctorName={session.user.fullName}
+          faskesName={session.user.faskesId || 'Puskesmas Tegalrejo'}
+          onLogout={onLogout}
+        />
+      </div>
 
-        <div className="flex items-center gap-2">
-          {/* Simulation Preset Buttons */}
-          <div className="hidden lg:flex items-center gap-1.5 mr-2">
-            <span className="text-[11px] font-bold text-slate-400">Kasus Demo:</span>
-            <button
-              type="button"
-              onClick={() => handleSelectPatient(PRESET_PATIENTS[0])}
-              className={`text-[11px] font-bold px-2.5 py-1 rounded-xl border transition-all ${
-                selectedPatientId === PRESET_PATIENTS[0].id
-                  ? 'bg-rose-50 border-rose-300 text-rose-700 shadow-xs'
-                  : 'bg-white border-[#E5E5E5] text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              1: Defisiensi Fe
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectPatient(PRESET_PATIENTS[1])}
-              className={`text-[11px] font-bold px-2.5 py-1 rounded-xl border transition-all ${
-                selectedPatientId === PRESET_PATIENTS[1].id
-                  ? 'bg-amber-50 border-amber-300 text-amber-700 shadow-xs'
-                  : 'bg-white border-[#E5E5E5] text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              2: Inhibisi Zn
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSelectPatient(PRESET_PATIENTS[2])}
-              className={`text-[11px] font-bold px-2.5 py-1 rounded-xl border transition-all ${
-                selectedPatientId === PRESET_PATIENTS[2].id
-                  ? 'bg-emerald-50 border-emerald-300 text-[#2B8A44] shadow-xs'
-                  : 'bg-white border-[#E5E5E5] text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              3: Normal
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={onLogout}
-            className="w-9 h-9 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 flex items-center justify-center transition-colors border border-[#E5E5E5]"
-            title="Keluar dari sesi dokter"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </header>
-
-      {/* MAIN CONTENT AREA */}
-      <div className="flex-1 overflow-hidden p-4 sm:p-5 flex flex-col gap-4">
-        {/* 2. QUICKEN KPI SUMMARY ROW */}
-        <DoctorKPIBar
-          totalPatients={kpiCounts.total}
-          tier1Count={kpiCounts.tier1}
-          tier2Count={kpiCounts.tier2}
-          normalCount={kpiCounts.normal}
-          selectedFilter={tierFilter}
-          onSelectFilter={(f) => setTierFilter(f)}
+      {/* 2. MAIN APPLICATION WORKSTATION AREA */}
+      <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
+        {/* Top Header */}
+        <DoctorTopBar
+          doctorName={session.user.fullName}
+          faskesName={session.user.faskesId || 'Puskesmas Tegalrejo'}
+          onLogout={onLogout}
         />
 
-        {/* 3. DUAL-PANE WORKSTATION: WORKLIST & CLINICAL DETAIL */}
-        <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-4 overflow-hidden">
-          {/* LEFT PANE: PATIENT TABLE WORKLIST */}
-          <div
-            className={`w-full md:w-[48%] lg:w-[45%] h-full shrink-0 ${
-              isMobileDetailOpen ? 'hidden md:block' : 'block'
-            }`}
-          >
-            <DoctorPatientTable
-              patients={filteredPatients}
-              selectedPatientId={selectedPatientId}
-              onSelectPatient={handleSelectPatient}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              selectedFilter={tierFilter}
-              onFilterChange={setTierFilter}
-            />
-          </div>
+        {/* Scrollable Workstation Body */}
+        <main className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5">
+          {/* Upper Section: Quicken 2-Card 50/50 Grid */}
+          <DoctorAnalyticsCards
+            totalPatients={kpiCounts.total}
+            tier1Count={kpiCounts.tier1}
+            tier2Count={kpiCounts.tier2}
+            normalCount={kpiCounts.normal}
+            selectedFilter={tierFilter}
+            onSelectFilter={setTierFilter}
+          />
 
-          {/* RIGHT PANE: CLINICAL DETAIL INSPECTION */}
-          <div
-            className={`w-full md:flex-1 h-full min-w-0 ${
-              isMobileDetailOpen ? 'block' : 'hidden md:block'
-            }`}
-          >
-            <DoctorClinicalDetailPane
-              patient={activePatient}
-              onBackToQueue={() => setIsMobileDetailOpen(false)}
-              onOpenFhirModal={() => {
-                soundSynth.playPop();
-                setShowFhirModal(true);
-              }}
-              onSaveIntervention={handleSaveIntervention}
-            />
-          </div>
-        </div>
+          {/* Lower Section: Full-Width Tabular Worklist */}
+          <DoctorFullWidthTable
+            patients={filteredPatients}
+            selectedPatientId={selectedPatientId}
+            onSelectPatient={handleSelectPatient}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            selectedFilter={tierFilter}
+            onFilterChange={setTierFilter}
+          />
+        </main>
       </div>
+
+      {/* 3. SLIDE-OVER CLINICAL INSPECTION DRAWER */}
+      <DoctorSlideOverDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        patient={activePatient}
+        onSaveIntervention={handleSaveIntervention}
+        onOpenFhirModal={() => {
+          soundSynth.playPop();
+          setShowFhirModal(true);
+        }}
+      />
 
       {/* 4. MODAL SATUSEHAT FHIR R4 EXPORT */}
       {showFhirModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 animate-in fade-in duration-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-100">
           <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-[#E5E5E5] overflow-hidden flex flex-col max-h-[85vh]">
             <div className="px-5 py-4 border-b border-[#E5E5E5] flex items-center justify-between bg-slate-50 shrink-0">
               <div className="flex items-center gap-2.5">

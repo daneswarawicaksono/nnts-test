@@ -23,7 +23,10 @@ export function App() {
     setIsDevRoute(hasDevParam || isDevPath);
 
     // Check clean/pure mode for Figma html.to.design capture
-    const hasCleanParam = searchParams.get('clean') === '1' || searchParams.get('pure') === '1' || searchParams.get('figma') === '1';
+    const hasCleanParam =
+      searchParams.get('clean') === '1' ||
+      searchParams.get('pure') === '1' ||
+      searchParams.get('figma') === '1';
     setIsCleanFrame(hasCleanParam);
 
     // Check URL route parameters for direct testing / html.to.design import
@@ -33,7 +36,7 @@ export function App() {
 
     if (viewParam === 'onboarding') {
       setCurrentView('onboarding');
-    } else if (viewParam === 'game-session') {
+    } else if (viewParam === 'game-session' || viewParam === 'game') {
       setCurrentView('game');
     }
 
@@ -59,12 +62,24 @@ export function App() {
     } else if (roleParam === 'cadre' || viewParam === 'cadre') {
       setSession({
         token: 'demo-cadre',
-        user: { id: 'u-cadre', fullName: 'Kader Nurul Hidayah', role: 'cadre', avatarId: 'av-2', posyanduId: 'POSYANDU-MLT-01' },
+        user: {
+          id: 'u-cadre',
+          fullName: 'Kader Nurul Hidayah',
+          role: 'cadre',
+          avatarId: 'av-2',
+          posyanduId: 'POSYANDU-MLT-01',
+        },
       });
     } else if (roleParam === 'doctor' || viewParam === 'doctor') {
       setSession({
         token: 'demo-doctor',
-        user: { id: 'u-doctor', fullName: 'dr. Budi Santoso, Sp.A', role: 'doctor', avatarId: 'av-3', faskesId: 'PUSK-TEGALREJO' },
+        user: {
+          id: 'u-doctor',
+          fullName: 'dr. Budi Santoso, Sp.A',
+          role: 'doctor',
+          avatarId: 'av-3',
+          faskesId: 'PUSK-TEGALREJO',
+        },
       });
     } else {
       // Check existing session in storage
@@ -86,16 +101,26 @@ export function App() {
     return <ComponentShowcase />;
   }
 
-  // Clinical & Cadre roles expand to a professional workstation layout on desktop/laptop
+  const isDoctor = session?.user.role === 'doctor';
   const isExpandedWorkstation =
     Boolean(session && (session.user.role === 'doctor' || session.user.role === 'cadre') && currentView !== 'game');
 
   return (
-    <div className={`min-h-screen w-full bg-white ${isCleanFrame ? '' : 'sm:bg-slate-100'} flex items-center justify-center ${isCleanFrame ? 'p-0' : 'sm:p-4'} font-sans`}>
+    <div
+      className={
+        isDoctor
+          ? 'min-h-screen w-full bg-[#F8F9FA] flex flex-col font-sans p-0'
+          : isCleanFrame
+          ? 'min-h-screen w-full bg-white flex items-center justify-center font-sans p-0'
+          : 'min-h-screen w-full bg-white sm:bg-slate-100 flex items-center justify-center sm:p-4 font-sans'
+      }
+    >
       <div
         className={
-          isCleanFrame
-            ? 'w-full max-w-[412px] min-h-[915px] bg-white overflow-hidden relative flex flex-col'
+          isDoctor
+            ? 'w-full h-screen bg-[#F8F9FA] overflow-hidden relative flex flex-col'
+            : isCleanFrame
+            ? 'w-full max-w-[412px] min-h-[915px] bg-white overflow-hidden relative flex flex-col shadow-none border-0'
             : isExpandedWorkstation
             ? 'w-full max-w-6xl h-[100dvh] sm:h-[min(900px,96vh)] bg-white sm:rounded-3xl sm:shadow-2xl sm:border border-slate-200/90 overflow-hidden relative flex flex-col transition-all duration-normal'
             : 'w-full sm:max-w-[400px] h-[100dvh] sm:h-[min(820px,94vh)] bg-white sm:rounded-[44px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 overflow-hidden relative flex flex-col transition-all duration-normal'
@@ -112,13 +137,9 @@ export function App() {
             <GameSessionContainer
               childId="c-demo"
               childName="Anisa"
-              onExit={() => setCurrentView(session ? 'welcome' : 'welcome')}
+              onExit={() => setCurrentView('welcome')}
               onFinishSession={() => {
-                if (session) {
-                  setCurrentView('welcome');
-                } else {
-                  setCurrentView('welcome');
-                }
+                setCurrentView('welcome');
               }}
             />
           ) : session ? (
