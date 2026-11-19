@@ -9,6 +9,7 @@ export interface CDSSEvaluationResult {
   b12DeficiencyRisk: number; // 0-100%
   stuntingRisk: number; // 0-100%
   clinicalRationale: string[];
+  features?: Record<string, number>;
 }
 
 // [ASUMSI] Catatan Intervensi (menggantikan Tulis Resep sampai konfirmasi pengguna)

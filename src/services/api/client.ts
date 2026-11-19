@@ -1,4 +1,5 @@
 import { evaluateTriage } from '../cdss/inferenceEngine';
+import { ageInMonths } from '../../utils/age';
 import type { UserRole, AuthSession } from '../../types/role';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://otakatik-api.vercel.app';
@@ -11,6 +12,43 @@ const VALID_INVITATION_CODES: Record<string, { role: UserRole; institutionName: 
   'DOKTER-2026': { role: 'doctor', institutionName: 'Puskesmas Tegalrejo' },
 };
 
+export interface CreateSubjectPayload {
+  child_name: string;
+  birth_date: string; // YYYY-MM-DD
+  sex: 'M' | 'F';
+  posyandu_id: string;
+  guardian_name?: string;
+  phone?: string;
+  address?: string;
+  nik?: string;
+}
+
+export interface CreateSubjectResponse {
+  pseudo_uuid: string;
+  age_in_months: number;
+}
+
+export interface PosyanduSubjectItem {
+  pseudo_uuid: string;
+  child_name: string;
+  sex: string;
+  birth_date: string;
+  age_in_months: number;
+  last_screening: {
+    screening_uuid: string;
+    triage_tier: string;
+    assessed_at: string;
+  } | null;
+  last_measurements: {
+    weight_kg: number;
+    height_cm: number;
+    muac_lila_cm: number;
+    z_waz: number | null;
+    z_haz: number | null;
+    z_whz: number | null;
+  } | null;
+}
+
 export interface RegisterPayload {
   role: UserRole;
   fullName: string;
@@ -20,6 +58,7 @@ export interface RegisterPayload {
     childName: string;
     birthDate: string;
     gender: 'L' | 'P';
+    subjectId?: string;
   };
   cadreData?: {
     posyanduName: string;
@@ -33,12 +72,13 @@ export interface RegisterPayload {
 
 export interface ScreeningSubmissionPayload {
   childId: string;
+  subjectId?: string;
+  birthDate?: string;
+  gender?: 'L' | 'P' | 'Male' | 'Female';
   reactionTimeTrials: number[]; // ms
   goNoGoAccuracy: number; // %
   goNoGoCommissionErrors: number;
   memorySpanScore: number;
-  ageMonths?: number;
-  gender?: 'L' | 'P' | 'Male' | 'Female';
   weightKg?: number;
   heightCm?: number;
   muacLilaCm?: number;
@@ -56,6 +96,10 @@ export interface ScreeningEvaluationResponse {
   b12Risk: number;
   summaryFeedback: string;
   clinicalRationale?: string[];
+  features?: Record<string, number>;
+  rawProbabilities?: Record<string, number>;
+  tierBeforeGuardrail?: string;
+  guardrailRulesFired?: string[];
 }
 
 export interface WorklistResponse {
@@ -199,10 +243,106 @@ class ApiClient {
     }
   }
 
+  // ── Registrasi Anak Baru ke Server ──────────────────────────
+  async createSubject(payload: CreateSubjectPayload): Promise<CreateSubjectResponse> {
+    const authHeader = 'demo-kader';
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE_URL}/api/v1/subjects`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authHeader}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch {
+      throw new Error('Tidak ada koneksi, coba lagi');
+    }
+
+    if (res.status === 201) {
+      return (await res.json()) as CreateSubjectResponse;
+    }
+
+    let errJson: any = null;
+    try {
+      errJson = await res.json();
+    } catch {
+      // ignore
+    }
+
+    if (res.status === 422) {
+      if (errJson?.error === 'age_out_of_range') {
+        throw new Error(
+          `Usia anak harus 24-59 bulan (saat ini ${errJson?.age_in_months ?? '?'} bulan)`
+        );
+      }
+      if (errJson?.error === 'unknown_posyandu') {
+        throw new Error('Posyandu tidak terdaftar di sistem');
+      }
+      throw new Error(errJson?.error || 'Data yang dikirimkan tidak valid (422)');
+    }
+
+    if (res.status === 503) {
+      throw new Error('Layanan database sedang tidak tersedia (503), coba beberapa saat lagi');
+    }
+
+    throw new Error(errJson?.error || `Gagal mendaftarkan anak (HTTP ${res.status})`);
+  }
+
+  // ── Ambil Daftar Balita di Posyandu ─────────────────────────
+  async listSubjects(
+    posyanduId: string = 'POS-DIY-MLT01',
+    limit?: number
+  ): Promise<PosyanduSubjectItem[]> {
+    const authHeader = 'demo-kader';
+    let res: Response;
+    try {
+      const url = new URL(
+        `${API_BASE_URL}/api/v1/posyandu/${encodeURIComponent(posyanduId)}/subjects`
+      );
+      if (limit) url.searchParams.set('limit', String(limit));
+
+      res = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${authHeader}`,
+        },
+      });
+    } catch {
+      throw new Error('Tidak ada koneksi, coba lagi');
+    }
+
+    if (res.ok) {
+      return (await res.json()) as PosyanduSubjectItem[];
+    }
+
+    let errJson: any = null;
+    try {
+      errJson = await res.json();
+    } catch {
+      // ignore
+    }
+
+    if (res.status === 422 && errJson?.error === 'unknown_posyandu') {
+      throw new Error('Posyandu tidak terdaftar di sistem');
+    }
+
+    throw new Error(errJson?.error || `Gagal memuat daftar anak (HTTP ${res.status})`);
+  }
+
   // ── Submit & Sync Screening Session (100% Offline-First) ────
   async submitScreeningSession(
     payload: ScreeningSubmissionPayload
   ): Promise<ScreeningEvaluationResponse> {
+    // Validasi identitas wajib anak
+    if (!payload.subjectId || !payload.birthDate || !payload.gender) {
+      console.error(
+        '[Sync Aborted] subjectId, birthDate, atau gender anak tidak ditemukan:',
+        { subjectId: payload.subjectId, birthDate: payload.birthDate, gender: payload.gender }
+      );
+      throw new Error('subject_identity_missing: subjectId, birthDate, and gender are required');
+    }
+
     // 1. Eksekusi model ONNX lokal di browser (WebAssembly Engine)
     const evaluation = await evaluateTriage(payload);
 
@@ -218,16 +358,38 @@ class ApiClient {
     if (evaluation.znRisk >= 50 || evaluation.b12Risk >= 50) suspectedDeficiencies.push('ZN_B12');
     if (suspectedDeficiencies.length === 0) suspectedDeficiencies.push('NORMOTRITION');
 
+    const assessedAt = evaluation.evaluatedAt || new Date().toISOString();
+    const calculatedAge = ageInMonths(payload.birthDate, assessedAt);
+    const sexCode: 'M' | 'F' = payload.gender === 'Female' || payload.gender === 'P' ? 'F' : 'M';
+    const screeningUuid = `scr-${crypto.randomUUID()}`;
+
+    // TAHAP 8: Blok inference dari keluaran evaluateTriage/ONNX
+    const inferenceBlock = {
+      model_version: '1.0.0-champion',
+      model_md5: '71bfefd25f4d6586331e65409db48174',
+      threshold: 0.205,
+      features: evaluation.features ?? {},
+      raw_probabilities: evaluation.rawProbabilities ?? {},
+      tier_before_guardrail: evaluation.tierBeforeGuardrail ?? null,
+      tier_final:
+        evaluation.tier === 'Tier-1 Alert'
+          ? 'TIER_1_MERAH'
+          : evaluation.tier === 'Tier-2 Alert'
+          ? 'TIER_2_KUNING'
+          : 'TIER_HIJAU',
+      guardrail_rules_fired: evaluation.guardrailRulesFired ?? [],
+    };
+
     const syncRecord = {
-      screening_uuid: payload.childId || `scr-${Date.now()}`,
-      subject_pseudo_uuid: `sub-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`,
+      screening_uuid: screeningUuid,
+      subject_pseudo_uuid: payload.subjectId,
       encounter_context: {
         posyandu_id: this.currentSession?.user?.posyanduId || 'POS-DIY-MLT01',
         fktp_code: this.currentSession?.user?.faskesId || 'P3404010101',
         kader_operator_id: this.currentSession?.user?.id || 'KDR-AUTO-01',
-        age_in_months: payload.ageMonths ?? 36,
-        sex: payload.gender === 'Female' || payload.gender === 'P' ? 'F' : 'M',
-        assessed_at_iso: evaluation.evaluatedAt || new Date().toISOString(),
+        age_in_months: calculatedAge,
+        sex: sexCode,
+        assessed_at_iso: assessedAt,
       },
       somatometry_input: {
         weight_kg: payload.weightKg ?? 11.5,
@@ -259,6 +421,7 @@ class ApiClient {
           span_length_achieved: payload.memorySpanScore,
         },
       },
+      inference: inferenceBlock,
       triage_result: {
         tier: evaluation.tier, // 'Tier-1 Alert' | 'Tier-2 Alert' | 'Normal'
         suspected_deficiency: suspectedDeficiencies,
@@ -294,13 +457,27 @@ class ApiClient {
       });
 
       if (res.ok) {
-        console.log('[NNTS Sync] Berhasil tersinkronisasi ke backend live:', syncRecord.screening_uuid);
+        const data = (await res.json()) as {
+          synced_uuids?: string[];
+          rejected_uuids?: string[];
+          items?: Array<{ screening_uuid: string; status: string; reason?: string }>;
+        };
+        const isSynced = data.synced_uuids?.includes(syncRecord.screening_uuid);
+        if (isSynced) {
+          console.log('[NNTS Sync] Berhasil tersinkronisasi ke backend live:', syncRecord.screening_uuid);
+        } else {
+          const itemRes = data.items?.find((i) => i.screening_uuid === syncRecord.screening_uuid);
+          if (itemRes?.reason) {
+            (syncRecord as any).rejection_reason = itemRes.reason;
+            console.warn(`[NNTS Sync] Skrining ditolak server (${itemRes.reason}), disimpan di offline vault`);
+          }
+          this.saveToOfflineVault(syncRecord);
+        }
       } else {
         console.warn('[NNTS Sync] Server merespons HTTP', res.status, '— data disimpan di offline vault');
         this.saveToOfflineVault(syncRecord);
       }
-    } catch (netErr) {
-      // Jaringan Posyandu tidak ada / offline mode
+    } catch {
       console.info('[NNTS Sync] Sedang offline, skrining disimpan ke offline vault lokal');
       this.saveToOfflineVault(syncRecord);
     }
@@ -329,12 +506,37 @@ class ApiClient {
       });
 
       if (res.ok) {
-        const remaining = queue.slice(50);
-        localStorage.setItem('nnts_offline_vault', JSON.stringify(remaining));
-        return { synced: queue.length - remaining.length, remaining: remaining.length };
+        const data = (await res.json()) as {
+          synced_uuids?: string[];
+          rejected_uuids?: string[];
+          items?: Array<{ screening_uuid: string; status: string; reason?: string }>;
+        };
+
+        const syncedSet = new Set(data.synced_uuids || []);
+
+        // Hapus item dari antrean HANYA jika screening_uuid-nya ada di synced_uuids
+        const remainingQueue: any[] = [];
+        for (const item of queue) {
+          if (syncedSet.has(item.screening_uuid)) {
+            continue;
+          }
+          // Jika ditolak server, catat alasannya dan tetap simpan di antrean
+          const rejectedItem = data.items?.find((i) => i.screening_uuid === item.screening_uuid);
+          if (rejectedItem?.reason) {
+            item.rejection_reason = rejectedItem.reason;
+            console.warn(
+              `[Sync Vault] Item ${item.screening_uuid} ditolak server: ${rejectedItem.reason}`
+            );
+          }
+          remainingQueue.push(item);
+        }
+
+        localStorage.setItem('nnts_offline_vault', JSON.stringify(remainingQueue));
+        const syncedCount = queue.length - remainingQueue.length;
+        return { synced: syncedCount, remaining: remainingQueue.length };
       }
     } catch {
-      // Masih offline
+      // Masih offline, antrean tidak berubah
     }
 
     return { synced: 0, remaining: queue.length };

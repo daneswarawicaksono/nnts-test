@@ -4,6 +4,7 @@ export interface RegisteredChildData {
   childName: string;
   birthDate: string;
   gender: 'L' | 'P';
+  subjectId?: string;
 }
 
 export interface AuthSession {

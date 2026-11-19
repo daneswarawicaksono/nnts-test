@@ -8,8 +8,11 @@ import { GameCelebration } from './modules/GameCelebration';
 export interface GameSessionContainerProps {
   childId: string;
   childName: string;
+  subjectId?: string;
+  birthDate?: string;
+  gender?: 'L' | 'P';
   onExit: () => void;
-  onFinishSession: () => void;
+  onFinishSession: (evaluation?: any) => void;
 }
 
 type GameStep = 'trail-map' | 'module-1' | 'module-2' | 'module-3' | 'celebration';
@@ -17,6 +20,9 @@ type GameStep = 'trail-map' | 'module-1' | 'module-2' | 'module-3' | 'celebratio
 export const GameSessionContainer: React.FC<GameSessionContainerProps> = ({
   childId,
   childName,
+  subjectId,
+  birthDate,
+  gender,
   onExit,
   onFinishSession,
 }) => {
@@ -103,11 +109,14 @@ export const GameSessionContainer: React.FC<GameSessionContainerProps> = ({
         <GameCelebration
           childId={childId}
           childName={childName}
+          subjectId={subjectId}
+          birthDate={birthDate}
+          gender={gender}
           trials={reactionTrials}
           accuracy={goNoGoAccuracy}
           commissionErrors={goNoGoCommissionErrors}
           spanScore={memorySpanScore}
-          onFinish={onFinishSession}
+          onFinish={(evalResult) => onFinishSession(evalResult)}
         />
       )}
     </div>
