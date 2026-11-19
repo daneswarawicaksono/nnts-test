@@ -56,21 +56,34 @@ export function App() {
     return <ComponentShowcase />;
   }
 
-  // Clinical & Cadre roles expand to a professional workstation layout on desktop/laptop
+  const isClean = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('clean') === '1';
+  const isDoctor = session?.user.role === 'doctor';
   const isExpandedWorkstation =
     Boolean(session && (session.user.role === 'doctor' || session.user.role === 'cadre') && currentView !== 'game');
 
   return (
-    <div className="min-h-screen w-full bg-white sm:bg-slate-100 flex items-center justify-center sm:p-4 font-sans">
+    <div
+      className={
+        isDoctor
+          ? 'min-h-screen w-full bg-[#F8F9FA] flex flex-col font-sans p-0'
+          : isClean
+          ? 'min-h-screen w-full bg-white flex items-center justify-center font-sans p-0'
+          : 'min-h-screen w-full bg-white sm:bg-slate-100 flex items-center justify-center sm:p-4 font-sans'
+      }
+    >
       <div
         className={
-          isExpandedWorkstation
+          isDoctor
+            ? 'w-full h-screen bg-[#F8F9FA] overflow-hidden relative flex flex-col'
+            : isClean
+            ? 'w-full max-w-[400px] h-[100dvh] bg-white overflow-hidden relative flex flex-col shadow-none border-0'
+            : isExpandedWorkstation
             ? 'w-full max-w-6xl h-[100dvh] sm:h-[min(900px,96vh)] bg-white sm:rounded-3xl sm:shadow-2xl sm:border border-slate-200/90 overflow-hidden relative flex flex-col transition-all duration-normal'
             : 'w-full sm:max-w-[400px] h-[100dvh] sm:h-[min(820px,94vh)] bg-white sm:rounded-[44px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 overflow-hidden relative flex flex-col transition-all duration-normal'
         }
       >
         {/* Dynamic Notch Pill on Desktop Frame (only shown on mobile-frame mode) */}
-        {!isExpandedWorkstation && (
+        {!isExpandedWorkstation && !isClean && (
           <div className="hidden sm:block absolute top-2 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-800 rounded-pill z-50 pointer-events-none" />
         )}
 
