@@ -10,16 +10,22 @@ import { api, type ScreeningEvaluationResponse } from '../../../services/api/cli
 export interface GameCelebrationProps {
   childId: string;
   childName: string;
+  subjectId?: string;
+  birthDate?: string;
+  gender?: 'L' | 'P';
   trials: number[];
   accuracy: number;
   commissionErrors: number;
   spanScore: number;
-  onFinish: () => void;
+  onFinish: (evaluation?: ScreeningEvaluationResponse | null) => void;
 }
 
 export const GameCelebration: React.FC<GameCelebrationProps> = ({
   childId,
   childName,
+  subjectId,
+  birthDate,
+  gender,
   trials,
   accuracy,
   commissionErrors,
@@ -49,6 +55,9 @@ export const GameCelebration: React.FC<GameCelebrationProps> = ({
     api
       .submitScreeningSession({
         childId,
+        subjectId,
+        birthDate,
+        gender,
         reactionTimeTrials: trials,
         goNoGoAccuracy: accuracy,
         goNoGoCommissionErrors: commissionErrors,
@@ -58,10 +67,11 @@ export const GameCelebration: React.FC<GameCelebrationProps> = ({
         setEvaluation(res);
         setIsLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('[GameCelebration] submitScreeningSession error:', err);
         setIsLoading(false);
       });
-  }, [childId, trials, accuracy, commissionErrors, spanScore]);
+  }, [childId, subjectId, birthDate, gender, trials, accuracy, commissionErrors, spanScore]);
 
   const avgLatency = Math.round(trials.reduce((a, b) => a + b, 0) / (trials.length || 1));
 
@@ -148,7 +158,7 @@ export const GameCelebration: React.FC<GameCelebrationProps> = ({
           iconPosition="right"
           onClick={() => {
             soundSynth.playPop();
-            onFinish();
+            onFinish(evaluation);
           }}
         >
           Kembali ke Beranda

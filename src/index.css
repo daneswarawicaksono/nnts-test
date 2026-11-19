@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -11,25 +11,69 @@
     --color-orange-500: #F97316;
     --color-slate-900: #0F172A;
     --color-slate-600: #475569;
+    --color-google-green: #34A853;
+    --color-google-green-dark: #2B8A44;
     --ease-spring-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-spring-smooth: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Nunito', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     color: #0F172A;
-    background-color: #F8FAFC;
+    background-color: #FFFFFF;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 }
 
+/* Duolingo / Google 3D Button Utility Classes */
+.btn-3d-green {
+  background-color: #34A853;
+  color: #FFFFFF;
+  font-weight: 800;
+  border-radius: 16px;
+  box-shadow: 0 4px 0 #2B8A44;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+.btn-3d-green:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #2B8A44;
+}
+
+.btn-3d-white {
+  background-color: #FFFFFF;
+  color: #1E293B;
+  font-weight: 800;
+  border: 1.5px solid #E5E5E5;
+  border-radius: 16px;
+  box-shadow: 0 3px 0 #E5E5E5;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+.btn-3d-white:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #E5E5E5;
+}
+
+.btn-3d-blue {
+  background-color: #4285F4;
+  color: #FFFFFF;
+  font-weight: 800;
+  border-radius: 16px;
+  box-shadow: 0 4px 0 #2B66C4;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+.btn-3d-blue:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #2B66C4;
+}
+
 /* Glass surface with solid fallback for prefers-reduced-transparency */
 .glass-card {
-  background-color: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.75);
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #E5E5E5;
 }
 
 @media (prefers-reduced-transparency: reduce) {

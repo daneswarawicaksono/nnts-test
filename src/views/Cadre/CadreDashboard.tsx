@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Users,
   Plus,
@@ -10,13 +10,18 @@ import {
   Search,
   X,
   UserPlus,
+  Gamepad2,
+  RefreshCw,
 } from 'lucide-react';
 import { GlassCard } from '../../design-system/primitives/GlassCard';
 import { Button } from '../../design-system/primitives/Button';
 import { EmptyState } from '../../design-system/primitives/EmptyState';
 import { StreakBadge } from '../../design-system/primitives/StreakBadge';
 import { ProgressBar } from '../../design-system/primitives/ProgressBar';
+import { GameSessionContainer } from '../Game/GameSessionContainer';
 import { soundSynth } from '../../services/audio/synth';
+import { api, type PosyanduSubjectItem } from '../../services/api/client';
+import { ageInMonths } from '../../utils/age';
 import type { AuthSession } from '../../types/role';
 
 export interface CadreDashboardProps {
@@ -29,13 +34,16 @@ export interface ToddlerRecord {
   name: string;
   ageMonths: number;
   gender: 'L' | 'P';
+  birthDate?: string;
   parentName: string;
-  weightKg: number;
-  heightCm: number;
-  muacCm: number;
+  weightKg: number | null;
+  heightCm: number | null;
+  muacCm: number | null;
   hasMeasuredToday: boolean;
   alert: boolean;
   alertReason?: string;
+  lastScreeningTier?: string | null;
+  lastAssessedAt?: string | null;
 }
 
 const INITIAL_TODDLERS: ToddlerRecord[] = [
@@ -105,6 +113,8 @@ const INITIAL_TODDLERS: ToddlerRecord[] = [
 
 export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogout }) => {
   const cacheKey = `nnts_cadre_toddlers_${session.user.id}`;
+  const posyanduId = session.user.posyanduId || 'POS-DIY-MLT01';
+
   const [toddlers, setToddlers] = useState<ToddlerRecord[]>(() => {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -122,8 +132,71 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
     return [];
   });
 
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [activeGameSubject, setActiveGameSubject] = useState<ToddlerRecord | null>(null);
+
+  // Ambil data registri balita dari server Posyandu
+  const fetchPosyanduSubjects = useCallback(async () => {
+    setIsLoadingSubjects(true);
+    try {
+      const data: PosyanduSubjectItem[] = await api.listSubjects(posyanduId);
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped: ToddlerRecord[] = data.map((item) => {
+          const localMeasureStr = localStorage.getItem(`nnts_cadre_measure_${item.pseudo_uuid}`);
+          let localMeasure: any = null;
+          if (localMeasureStr) {
+            try {
+              localMeasure = JSON.parse(localMeasureStr);
+            } catch {
+              // ignore
+            }
+          }
+
+          const weight = localMeasure?.weight_kg ?? item.last_measurements?.weight_kg ?? null;
+          const height = localMeasure?.height_cm ?? item.last_measurements?.height_cm ?? null;
+          const muac = localMeasure?.muac_lila_cm ?? item.last_measurements?.muac_lila_cm ?? null;
+          const hasMeasured = Boolean(localMeasure?.measured_at);
+
+          const isAlert = Boolean(muac != null && muac < 12.5);
+          const alertReason =
+            muac != null && muac < 11.5
+              ? 'Pita Merah (<11.5 cm) — Rujuk ke Puskesmas'
+              : muac != null && muac <= 12.5
+              ? 'Pita Kuning (11.5–12.5 cm) — Waspada Defisiensi Besi'
+              : undefined;
+
+          return {
+            id: item.pseudo_uuid,
+            name: item.child_name,
+            ageMonths: item.age_in_months,
+            gender: item.sex === 'M' ? 'L' : 'P',
+            birthDate: item.birth_date,
+            parentName: 'Wali Terdaftar',
+            weightKg: weight,
+            heightCm: height,
+            muacCm: muac,
+            hasMeasuredToday: hasMeasured,
+            alert: isAlert,
+            alertReason,
+            lastScreeningTier: item.last_screening?.triage_tier || null,
+            lastAssessedAt: item.last_screening?.assessed_at || null,
+          };
+        });
+        setToddlers(mapped);
+      }
+    } catch (e) {
+      console.warn('[CadreDashboard] Gagal memuat daftar subjek dari server:', e);
+    } finally {
+      setIsLoadingSubjects(false);
+    }
+  }, [posyanduId]);
+
+  useEffect(() => {
+    fetchPosyanduSubjects();
+  }, [fetchPosyanduSubjects]);
+
   // Simpan perubahan ke storage
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem(cacheKey, JSON.stringify(toddlers));
   }, [toddlers, cacheKey]);
 
@@ -147,17 +220,28 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
   const [activeToddlerForMeasure, setActiveToddlerForMeasure] = useState<ToddlerRecord | null>(null);
 
   // Somatic form fields
-  const [measureWeight, setMeasureWeight] = useState('11.5');
-  const [measureHeight, setMeasureHeight] = useState('87.0');
-  const [measureMuac, setMeasureMuac] = useState('12.2');
+  const [measureWeight, setMeasureWeight] = useState('');
+  const [measureHeight, setMeasureHeight] = useState('');
+  const [measureMuac, setMeasureMuac] = useState('');
   const [measurePaleConjunctiva, setMeasurePaleConjunctiva] = useState(false);
   const [measureStomatitis, setMeasureStomatitis] = useState(false);
 
   // New child form fields
   const [newName, setNewName] = useState('');
-  const [newAge, setNewAge] = useState(24);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const getDefaultBirthDate = () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 30);
+    return d.toISOString().split('T')[0];
+  };
+  const [newBirthDate, setNewBirthDate] = useState<string>(getDefaultBirthDate);
   const [newGender, setNewGender] = useState<'L' | 'P'>('P');
   const [newParentName, setNewParentName] = useState('');
+  const [newChildSubmitting, setNewChildSubmitting] = useState(false);
+  const [newChildError, setNewChildError] = useState<string | null>(null);
+
+  const calculatedNewAge = newBirthDate ? ageInMonths(newBirthDate, todayStr) : 0;
+  const isNewAgeValid = Boolean(newBirthDate) && calculatedNewAge >= 24 && calculatedNewAge <= 59;
 
   // Filtered toddlers
   const filteredToddlers = useMemo(() => {
@@ -176,26 +260,37 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
   const openMeasurementModal = (toddler: ToddlerRecord) => {
     soundSynth.playPop();
     setActiveToddlerForMeasure(toddler);
-    setMeasureWeight(toddler.weightKg.toString());
-    setMeasureHeight(toddler.heightCm.toString());
-    setMeasureMuac(toddler.muacCm.toString());
+    setMeasureWeight(toddler.weightKg != null ? toddler.weightKg.toString() : '');
+    setMeasureHeight(toddler.heightCm != null ? toddler.heightCm.toString() : '');
+    setMeasureMuac(toddler.muacCm != null ? toddler.muacCm.toString() : '');
     setIsMeasurementModalOpen(true);
   };
 
   const handleSaveMeasurement = () => {
     if (!activeToddlerForMeasure) return;
     soundSynth.playChime();
-    const numWeight = parseFloat(measureWeight) || activeToddlerForMeasure.weightKg;
-    const numHeight = parseFloat(measureHeight) || activeToddlerForMeasure.heightCm;
-    const numMuac = parseFloat(measureMuac) || activeToddlerForMeasure.muacCm;
+    const numWeight = measureWeight.trim() ? parseFloat(measureWeight) : activeToddlerForMeasure.weightKg;
+    const numHeight = measureHeight.trim() ? parseFloat(measureHeight) : activeToddlerForMeasure.heightCm;
+    const numMuac = measureMuac.trim() ? parseFloat(measureMuac) : activeToddlerForMeasure.muacCm;
 
-    const isAlert = numMuac < 12.5;
+    const isAlert = Boolean(numMuac != null && numMuac < 12.5);
     const alertReason =
-      numMuac < 11.5
+      numMuac != null && numMuac < 11.5
         ? 'Pita Merah (<11.5 cm) — Rujuk ke Puskesmas'
-        : numMuac <= 12.5
+        : numMuac != null && numMuac <= 12.5
         ? 'Pita Kuning (11.5–12.5 cm) — Waspada Defisiensi Besi'
         : undefined;
+
+    // Simpan ke antrean lokal kader per anak
+    localStorage.setItem(
+      `nnts_cadre_measure_${activeToddlerForMeasure.id}`,
+      JSON.stringify({
+        weight_kg: numWeight,
+        height_cm: numHeight,
+        muac_lila_cm: numMuac,
+        measured_at: new Date().toISOString(),
+      })
+    );
 
     setToddlers((prev) =>
       prev.map((t) =>
@@ -216,30 +311,94 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
     alert(`Data fisik ${activeToddlerForMeasure.name} berhasil disimpan!`);
   };
 
-  const handleRegisterNewChild = () => {
+  const handleRegisterNewChild = async () => {
     if (!newName.trim() || !newParentName.trim()) {
       alert('Nama balita dan nama orang tua wajib diisi.');
       return;
     }
-    soundSynth.playChime();
-    const newRecord: ToddlerRecord = {
-      id: `T-0${toddlers.length + 1}`,
-      name: newName.trim(),
-      ageMonths: newAge,
-      gender: newGender,
-      parentName: newParentName.trim(),
-      weightKg: 11.0,
-      heightCm: 85.0,
-      muacCm: 13.0,
-      hasMeasuredToday: false,
-      alert: false,
-    };
-    setToddlers((prev) => [newRecord, ...prev]);
-    setIsNewChildModalOpen(false);
-    setNewName('');
-    setNewParentName('');
-    alert(`Balita baru ${newRecord.name} berhasil didaftarkan ke Posyandu.`);
+    if (!isNewAgeValid) {
+      alert(`Usia anak harus 24-59 bulan (saat ini ${calculatedNewAge} bulan).`);
+      return;
+    }
+
+    setNewChildSubmitting(true);
+    setNewChildError(null);
+    try {
+      const res = await api.createSubject({
+        child_name: newName.trim(),
+        birth_date: newBirthDate,
+        sex: newGender === 'L' ? 'M' : 'F',
+        posyandu_id: posyanduId,
+        guardian_name: newParentName.trim(),
+      });
+
+      soundSynth.playChime();
+      const newRecord: ToddlerRecord = {
+        id: res.pseudo_uuid,
+        name: newName.trim(),
+        ageMonths: res.age_in_months,
+        gender: newGender,
+        birthDate: newBirthDate,
+        parentName: newParentName.trim(),
+        weightKg: null,
+        heightCm: null,
+        muacCm: null,
+        hasMeasuredToday: false,
+        alert: false,
+        lastScreeningTier: null,
+      };
+
+      setToddlers((prev) => [newRecord, ...prev]);
+      setIsNewChildModalOpen(false);
+      setNewName('');
+      setNewParentName('');
+      alert(`Balita baru ${newRecord.name} berhasil didaftarkan ke server Posyandu.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal mendaftarkan balita';
+      setNewChildError(msg);
+      alert(msg);
+    } finally {
+      setNewChildSubmitting(false);
+    }
   };
+
+  // Full-screen Game Runner jika kader memulai game untuk balita tertentu
+  if (activeGameSubject) {
+    return (
+      <GameSessionContainer
+        childId={activeGameSubject.id}
+        childName={activeGameSubject.name}
+        subjectId={activeGameSubject.id}
+        birthDate={activeGameSubject.birthDate || '2024-05-19'}
+        gender={activeGameSubject.gender}
+        onExit={() => setActiveGameSubject(null)}
+        onFinishSession={(evaluation) => {
+          setActiveGameSubject(null);
+          const tierStr =
+            evaluation?.tier === 'Tier-1 Alert'
+              ? 'TIER_1_MERAH'
+              : evaluation?.tier === 'Tier-2 Alert'
+              ? 'TIER_2_KUNING'
+              : evaluation?.tier === 'Normal'
+              ? 'TIER_HIJAU'
+              : evaluation?.tier || 'TIER_HIJAU';
+
+          setToddlers((prev) =>
+            prev.map((s) =>
+              s.id === activeGameSubject.id
+                ? {
+                    ...s,
+                    lastScreeningTier: tierStr,
+                    lastAssessedAt: new Date().toISOString(),
+                  }
+                : s
+            )
+          );
+          soundSynth.playChime();
+        }}
+      />
+    );
+  }
 
   const numCurrentMuac = parseFloat(measureMuac) || 12.0;
 
@@ -348,6 +507,15 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={fetchPosyanduSubjects}
+                disabled={isLoadingSubjects}
+                className="text-[11px] font-bold text-teal-700 hover:text-teal-900 px-2.5 py-1.5 rounded-lg border border-teal-200 hover:bg-teal-50 transition-colors flex items-center gap-1"
+                title="Segarkan daftar dari server"
+              >
+                <RefreshCw className={`w-3 h-3 ${isLoadingSubjects ? 'animate-spin' : ''}`} />
+                <span>Segarkan</span>
+              </button>
               {toddlers.length > 0 && (
                 <button
                   onClick={handleClearData}
@@ -430,12 +598,32 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                         Usia {t.ageMonths} Bulan • Orang Tua: {t.parentName}
                       </div>
 
-                      {t.alertReason && (
-                        <div className="mt-1 text-[11px] font-bold text-rose-600 flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3 shrink-0" />
-                          <span>{t.alertReason}</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        {t.lastScreeningTier ? (
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              t.lastScreeningTier.includes('1') || t.lastScreeningTier.includes('MERAH')
+                                ? 'bg-rose-100 text-rose-800'
+                                : t.lastScreeningTier.includes('2') || t.lastScreeningTier.includes('KUNING')
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-emerald-100 text-emerald-800'
+                            }`}
+                          >
+                            Skrining: {t.lastScreeningTier}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                            Belum diskrining
+                          </span>
+                        )}
+
+                        {t.alertReason && (
+                          <span className="text-[10px] font-bold text-rose-600 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 shrink-0" />
+                            <span>{t.alertReason}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -443,15 +631,21 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                     <div className="flex items-center gap-2 text-xs">
                       <div className="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-center">
                         <span className="text-[9px] text-slate-400 block font-semibold">BB</span>
-                        <span className="font-extrabold text-slate-800">{t.weightKg} kg</span>
+                        <span className="font-extrabold text-slate-800">
+                          {t.weightKg != null ? `${t.weightKg} kg` : '-'}
+                        </span>
                       </div>
                       <div className="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-center">
                         <span className="text-[9px] text-slate-400 block font-semibold">TB</span>
-                        <span className="font-extrabold text-slate-800">{t.heightCm} cm</span>
+                        <span className="font-extrabold text-slate-800">
+                          {t.heightCm != null ? `${t.heightCm} cm` : '-'}
+                        </span>
                       </div>
                       <div
                         className={`border px-2.5 py-1 rounded-lg text-center ${
-                          t.muacCm < 11.5
+                          t.muacCm == null
+                            ? 'bg-slate-50 border-slate-200 text-slate-400'
+                            : t.muacCm < 11.5
                             ? 'bg-rose-50 border-rose-300 text-rose-800'
                             : t.muacCm <= 12.5
                             ? 'bg-amber-50 border-amber-300 text-amber-800'
@@ -459,17 +653,29 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                         }`}
                       >
                         <span className="text-[9px] block font-semibold opacity-75">LiLA</span>
-                        <span className="font-extrabold">{t.muacCm} cm</span>
+                        <span className="font-extrabold">
+                          {t.muacCm != null ? `${t.muacCm} cm` : '-'}
+                        </span>
                       </div>
                     </div>
 
-                    <Button
-                      variant={isMeasured ? 'secondary' : 'primary'}
-                      size="sm"
-                      onClick={() => openMeasurementModal(t)}
-                    >
-                      {isMeasured ? 'Ubah Ukuran' : 'Timbang'}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant={isMeasured ? 'secondary' : 'primary'}
+                        size="sm"
+                        onClick={() => openMeasurementModal(t)}
+                      >
+                        {isMeasured ? 'Ubah Ukuran' : 'Timbang'}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<Gamepad2 className="w-3.5 h-3.5 text-teal-700" />}
+                        onClick={() => setActiveGameSubject(t)}
+                      >
+                        Mulai Game
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
@@ -514,6 +720,7 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                 <input
                   type="number"
                   step="0.1"
+                  placeholder="Contoh: 12.2"
                   value={measureMuac}
                   onChange={(e) => setMeasureMuac(e.target.value)}
                   className="w-full px-3 py-2 text-sm font-bold rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600"
@@ -548,6 +755,7 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                   <input
                     type="number"
                     step="0.1"
+                    placeholder="Contoh: 11.5"
                     value={measureWeight}
                     onChange={(e) => setMeasureWeight(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600"
@@ -560,6 +768,7 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
                   <input
                     type="number"
                     step="0.5"
+                    placeholder="Contoh: 87.0"
                     value={measureHeight}
                     onChange={(e) => setMeasureHeight(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600"
@@ -645,17 +854,26 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-800 mb-1">
-                    Usia (Bulan):
-                  </label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-xs font-bold text-slate-800">
+                      Tgl Lahir:
+                    </label>
+                    <span className="text-[11px] font-black text-teal-800">
+                      {calculatedNewAge} Bulan
+                    </span>
+                  </div>
                   <input
-                    type="number"
-                    min={12}
-                    max={60}
-                    value={newAge}
-                    onChange={(e) => setNewAge(parseInt(e.target.value) || 24)}
-                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600"
+                    type="date"
+                    max={todayStr}
+                    value={newBirthDate}
+                    onChange={(e) => setNewBirthDate(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-600"
                   />
+                  {!isNewAgeValid && newBirthDate && (
+                    <span className="text-[10px] text-rose-600 font-bold block mt-0.5">
+                      Harus 24-59 bulan
+                    </span>
+                  )}
                 </div>
 
                 <div>
@@ -703,11 +921,22 @@ export const CadreDashboard: React.FC<CadreDashboardProps> = ({ session, onLogou
               </div>
             </div>
 
+            {newChildError && (
+              <div className="px-5 pb-2 text-[11px] font-bold text-rose-600">
+                {newChildError}
+              </div>
+            )}
             <div className="p-4 border-t border-slate-200 bg-white flex justify-end gap-2.5 shrink-0">
               <Button variant="secondary" size="sm" onClick={() => setIsNewChildModalOpen(false)}>
                 Batal
               </Button>
-              <Button variant="primary" size="sm" onClick={handleRegisterNewChild}>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!isNewAgeValid || newChildSubmitting}
+                isLoading={newChildSubmitting}
+                onClick={handleRegisterNewChild}
+              >
                 Daftarkan ke Posyandu
               </Button>
             </div>

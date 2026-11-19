@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ArrowRight, Check, ShieldCheck, Heart, Stethoscope, Users } from 'lucide-react';
+import { ChevronLeft, ArrowRight, Check, ShieldCheck, Heart, Stethoscope, Users, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Button } from '../../design-system/primitives/Button';
 import { TextField } from '../../design-system/primitives/TextField';
@@ -9,6 +9,7 @@ import { SpeechBubble } from '../../design-system/primitives/SpeechBubble';
 import { NutriSprout, type NutriSproutMood } from '../../design-system/mascot/NutriSprout';
 import { soundSynth } from '../../services/audio/synth';
 import { api, type RegisterPayload } from '../../services/api/client';
+import { ageInMonths } from '../../utils/age';
 import type { UserRole, AuthSession } from '../../types/role';
 
 export interface OnboardingViewProps {
@@ -36,8 +37,18 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
 
   // Contextual data for step 3
   const [childName, setChildName] = useState('');
-  const [childAgeMonths, setChildAgeMonths] = useState<number>(30);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const getDefaultBirthDate = () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 30);
+    return d.toISOString().split('T')[0];
+  };
+  const [childBirthDate, setChildBirthDate] = useState<string>(getDefaultBirthDate);
   const [childGender, setChildGender] = useState<'L' | 'P'>('P');
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const calculatedAgeMonths = childBirthDate ? ageInMonths(childBirthDate, todayStr) : 0;
+  const isChildAgeValid = Boolean(childBirthDate) && calculatedAgeMonths >= 24 && calculatedAgeMonths <= 59;
 
   const [cadrePosyandu, setCadrePosyandu] = useState('Posyandu Melati 1');
   const [cadreRw, setCadreRw] = useState('RW 03');
@@ -55,7 +66,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
 
   const isStep3Valid =
     selectedRole === 'parent'
-      ? childName.trim().length >= 2 && childAgeMonths >= 12 && childAgeMonths <= 60
+      ? childName.trim().length >= 2 && Boolean(childBirthDate) && isChildAgeValid
       : selectedRole === 'cadre'
       ? cadrePosyandu.trim().length >= 3 && cadreRw.trim().length >= 1
       : doctorFaskes.trim().length >= 3 && doctorNip.trim().length >= 5;
@@ -96,7 +107,22 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
     } else if (step === 3 && isStep3Valid) {
       // Final submission
       setIsSubmitting(true);
+      setSubmitError(null);
       try {
+        let registeredSubjectId: string | undefined = undefined;
+
+        if (selectedRole === 'parent') {
+          // Daftarkan anak ke server registri subjek API
+          const subRes = await api.createSubject({
+            child_name: childName.trim(),
+            birth_date: childBirthDate,
+            sex: childGender === 'L' ? 'M' : 'F',
+            posyandu_id: 'POS-DIY-MLT01',
+            guardian_name: fullName.trim(),
+          });
+          registeredSubjectId = subRes.pseudo_uuid;
+        }
+
         const payload: RegisterPayload = {
           role: selectedRole,
           fullName: fullName.trim(),
@@ -106,10 +132,9 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
             selectedRole === 'parent'
               ? {
                   childName: childName.trim(),
-                  birthDate: new Date(Date.now() - childAgeMonths * 30 * 86400000)
-                    .toISOString()
-                    .split('T')[0],
+                  birthDate: childBirthDate,
                   gender: childGender,
+                  subjectId: registeredSubjectId,
                 }
               : undefined,
           cadreData:
@@ -123,6 +148,23 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
         };
 
         const session = await api.registerUser(payload);
+
+        // Jika orang tua, inisialisasi profil anak aktif di localStorage
+        if (selectedRole === 'parent' && registeredSubjectId) {
+          const initialChild = {
+            id: `c-${Date.now()}`,
+            subjectId: registeredSubjectId,
+            birthDate: childBirthDate,
+            name: childName.trim(),
+            ageMonths: calculatedAgeMonths,
+            gender: childGender,
+            avatarEmoji: childGender === 'L' ? '👦' : '👧',
+            status: 'Belum Ada Skrining',
+            hasScreened: false,
+            streakCount: 0,
+          };
+          localStorage.setItem(`nnts_children_${session.user.id}`, JSON.stringify([initialChild]));
+        }
 
         // Confetti burst on successful registration
         try {
@@ -140,7 +182,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
         soundSynth.playChime();
         onComplete(session);
       } catch (err: unknown) {
-        alert(err instanceof Error ? err.message : 'Pendaftaran gagal');
+        const errorMsg = err instanceof Error ? err.message : 'Pendaftaran gagal';
+        setSubmitError(errorMsg);
       } finally {
         setIsSubmitting(false);
       }
@@ -385,24 +428,39 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-xs font-bold text-slate-900">Usia Balita:</span>
-                    <span className="text-xs font-extrabold text-teal-800">{childAgeMonths} Bulan</span>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label htmlFor="child-birth-date" className="text-xs font-bold text-slate-900">
+                      Tanggal Lahir Balita:
+                    </label>
+                    <span className="text-xs font-extrabold text-teal-800">
+                      {calculatedAgeMonths} Bulan
+                    </span>
                   </div>
                   <input
-                    type="range"
-                    min="12"
-                    max="59"
-                    value={childAgeMonths}
-                    onChange={(e) => setChildAgeMonths(Number(e.target.value))}
-                    className="w-full accent-teal-700 cursor-pointer"
+                    id="child-birth-date"
+                    type="date"
+                    max={todayStr}
+                    value={childBirthDate}
+                    onChange={(e) => {
+                      setChildBirthDate(e.target.value);
+                      setSubmitError(null);
+                    }}
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600"
                   />
-                  <div className="flex justify-between text-[10px] text-slate-400">
-                    <span>12 Bulan</span>
-                    <span>24-36 Bulan (Kritis)</span>
-                    <span>59 Bulan</span>
-                  </div>
+                  {!isChildAgeValid && childBirthDate && (
+                    <p className="text-[11px] font-bold text-rose-600 mt-1.5 flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>Usia anak harus 24-59 bulan untuk skrining ini (saat ini {calculatedAgeMonths} bulan).</span>
+                    </p>
+                  )}
                 </div>
+
+                {submitError && (
+                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{submitError}</span>
+                  </div>
+                )}
               </>
             )}
 

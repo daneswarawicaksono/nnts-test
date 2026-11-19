@@ -309,6 +309,20 @@ export async function evaluateTriage(input: CDSSInput): Promise<ScreeningEvaluat
     stuntingRisk,
     summaryFeedback,
     clinicalRationale,
+    features: featureMap,
+    rawProbabilities: {
+      pMerah: Number(pMerah.toFixed(4)),
+      pKuning: Number(pKuning.toFixed(4)),
+      pHijau: Number(pHijau.toFixed(4)),
+    },
+    tierBeforeGuardrail: (pMerah >= CDSS_CONFIG.thresholdMerah
+      ? 'TIER_1_MERAH'
+      : pKuning >= pHijau
+      ? 'TIER_2_KUNING'
+      : 'TIER_HIJAU'),
+    guardrailRulesFired: isGuardrailTriggered
+      ? (featureMap.muac_lila_cm < CDSS_CONFIG.guardrails.muacMinCm ? ['MUAC_SAM'] : ['Z_HAZ_SEVERE_STUNTING'])
+      : [],
   };
 }
 
