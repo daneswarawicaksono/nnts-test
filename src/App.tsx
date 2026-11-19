@@ -37,11 +37,8 @@ export function App() {
 
     if (viewParam === 'onboarding') {
       setCurrentView('onboarding');
-<<<<<<< HEAD
-=======
     } else if (viewParam === 'login' || viewParam === 'signin') {
       setCurrentView('login');
->>>>>>> task/auth-flow-fe
     } else if (viewParam === 'game-session' || viewParam === 'game') {
       setCurrentView('game');
     }
@@ -159,7 +156,7 @@ export function App() {
           ) : currentView === 'login' ? (
             <LoginView
               onBack={() => setCurrentView('welcome')}
-              onSuccess={(newSession: AuthSession) => setSession(newSession)}
+              onSuccess={(newSession) => setSession(newSession)}
               onGoToRegister={() => setCurrentView('onboarding')}
             />
           ) : currentView === 'welcome' ? (
