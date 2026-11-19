@@ -11,7 +11,6 @@ import { api } from './services/api/client';
 import type { AuthSession } from './types/role';
 
 export function App() {
-  const [isCleanFrame, setIsCleanFrame] = useState(false);
   const [isDevRoute, setIsDevRoute] = useState(false);
   const [currentView, setCurrentView] = useState<'welcome' | 'login' | 'onboarding' | 'game'>('welcome');
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -22,13 +21,6 @@ export function App() {
     const hasDevParam = searchParams.get('dev') === '1';
     const isDevPath = window.location.pathname.startsWith('/dev');
     setIsDevRoute(hasDevParam || isDevPath);
-
-    // Check clean/pure mode for Figma html.to.design capture
-    const hasCleanParam =
-      searchParams.get('clean') === '1' ||
-      searchParams.get('pure') === '1' ||
-      searchParams.get('figma') === '1';
-    setIsCleanFrame(hasCleanParam);
 
     // Check URL route parameters for direct testing / html.to.design import
     const viewParam = searchParams.get('view');
@@ -104,35 +96,9 @@ export function App() {
     return <ComponentShowcase />;
   }
 
-  const isDoctor = session?.user.role === 'doctor';
-  const isExpandedWorkstation =
-    Boolean(session && (session.user.role === 'doctor' || session.user.role === 'cadre') && currentView !== 'game');
-
   return (
-    <div
-      className={
-        isDoctor
-          ? 'min-h-screen w-full bg-[#F8F9FA] flex flex-col font-sans p-0'
-          : isCleanFrame
-          ? 'min-h-screen w-full bg-white flex items-center justify-center font-sans p-0'
-          : 'min-h-screen w-full bg-white sm:bg-slate-100 flex items-center justify-center sm:p-4 font-sans'
-      }
-    >
-      <div
-        className={
-          isDoctor
-            ? 'w-full h-screen bg-[#F8F9FA] overflow-hidden relative flex flex-col'
-            : isCleanFrame
-            ? 'w-full max-w-[412px] min-h-[915px] bg-white overflow-hidden relative flex flex-col shadow-none border-0'
-            : isExpandedWorkstation
-            ? 'w-full max-w-6xl h-[100dvh] sm:h-[min(900px,96vh)] bg-white sm:rounded-3xl sm:shadow-2xl sm:border border-slate-200/90 overflow-hidden relative flex flex-col transition-all duration-normal'
-            : 'w-full sm:max-w-[400px] h-[100dvh] sm:h-[min(820px,94vh)] bg-white sm:rounded-[44px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 overflow-hidden relative flex flex-col transition-all duration-normal'
-        }
-      >
-        {/* Dynamic Notch Pill on Desktop Frame (only shown on mobile-frame mode) */}
-        {!isExpandedWorkstation && !isCleanFrame && (
-          <div className="hidden sm:block absolute top-2 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-800 rounded-pill z-50 pointer-events-none" />
-        )}
+    <div className={`min-h-[100dvh] w-full font-sans ${session?.user.role === 'doctor' ? 'bg-[#F8F9FA]' : 'bg-white'}`}>
+      <div className="w-full h-[100dvh] bg-white overflow-hidden relative flex flex-col">
 
         {/* Dynamic View Router */}
         <div className="flex-1 w-full h-full overflow-hidden flex flex-col relative">

@@ -19,21 +19,9 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ session, children }) => 
     window.location.reload();
   };
 
-  const isExpandedWorkstation = session.user.role === 'doctor';
-
   return (
-    <div className="min-h-screen w-full bg-slate-100 flex items-center justify-center sm:p-4 font-sans">
-      <div
-        className={
-          isExpandedWorkstation
-            ? 'w-full max-w-6xl h-[100dvh] sm:h-[min(900px,96vh)] bg-white sm:rounded-3xl sm:shadow-2xl sm:border border-slate-200/90 overflow-hidden relative flex flex-col'
-            : 'w-full sm:max-w-[420px] h-[100dvh] sm:h-[min(840px,94vh)] bg-white sm:rounded-[44px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 overflow-hidden relative flex flex-col'
-        }
-      >
-        {/* Notch Decorator on Mobile Frame */}
-        {!isExpandedWorkstation && (
-          <div className="hidden sm:block absolute top-2 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-800 rounded-full z-50 pointer-events-none" />
-        )}
+    <div className="min-h-[100dvh] w-full bg-white font-sans">
+      <div className="w-full h-[100dvh] bg-white overflow-hidden relative flex flex-col">
 
         {/* Global Compact App Header */}
         <header className="shrink-0 h-14 bg-white/95 backdrop-blur border-b border-slate-200/80 px-4 flex items-center justify-between z-20">
