@@ -120,9 +120,10 @@ const RECIPES_DATA: RecipeItem[] = [
 export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLogout }) => {
   const [activeTab, setActiveTab] = useState<ParentTabType>(() => {
     const searchParams = new URLSearchParams(window.location.search);
+    const viewParam = searchParams.get('view');
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'game' || tabParam === 'games') return 'game';
-    if (tabParam === 'dapur' || tabParam === 'rekomendasi' || tabParam === 'nutrisi') return 'rekomendasi';
+    if (viewParam === 'game-hub' || viewParam === 'gamehub' || viewParam === 'menu-game' || tabParam === 'game' || tabParam === 'games') return 'game';
+    if (viewParam === 'rekomendasi' || viewParam === 'dapur' || viewParam === 'nutrisi' || tabParam === 'dapur' || tabParam === 'rekomendasi' || tabParam === 'nutrisi') return 'rekomendasi';
     return 'beranda';
   });
 

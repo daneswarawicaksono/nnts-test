@@ -10,6 +10,7 @@ import { api } from './services/api/client';
 import type { AuthSession } from './types/role';
 
 export function App() {
+  const [isCleanFrame, setIsCleanFrame] = useState(false);
   const [isDevRoute, setIsDevRoute] = useState(false);
   const [currentView, setCurrentView] = useState<'welcome' | 'onboarding' | 'game'>('welcome');
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -21,21 +22,50 @@ export function App() {
     const isDevPath = window.location.pathname.startsWith('/dev');
     setIsDevRoute(hasDevParam || isDevPath);
 
-    // Check URL route parameters for direct testing
+    // Check clean/pure mode for Figma html.to.design capture
+    const hasCleanParam = searchParams.get('clean') === '1' || searchParams.get('pure') === '1' || searchParams.get('figma') === '1';
+    setIsCleanFrame(hasCleanParam);
+
+    // Check URL route parameters for direct testing / html.to.design import
     const viewParam = searchParams.get('view');
+    const roleParam = searchParams.get('role');
+    const tabParam = searchParams.get('tab');
+
     if (viewParam === 'onboarding') {
       setCurrentView('onboarding');
-    } else if (viewParam === 'game') {
+    } else if (viewParam === 'game-session') {
       setCurrentView('game');
     }
 
-    const roleParam = searchParams.get('role');
-    if (roleParam === 'parent') {
-      setSession({ token: 'demo-parent', user: { id: 'u-parent', fullName: 'Ibu Siti Rahma', role: 'parent', avatarId: 'av-1' } });
-    } else if (roleParam === 'cadre') {
-      setSession({ token: 'demo-cadre', user: { id: 'u-cadre', fullName: 'Kader Nurul Hidayah', role: 'cadre', avatarId: 'av-2', posyanduId: 'POSYANDU-MLT-01' } });
-    } else if (roleParam === 'doctor') {
-      setSession({ token: 'demo-doctor', user: { id: 'u-doctor', fullName: 'dr. Budi Santoso, Sp.A', role: 'doctor', avatarId: 'av-3', faskesId: 'PUSK-TEGALREJO' } });
+    // Direct role or parent dashboard view triggers (home, rekomendasi, game-hub)
+    if (
+      roleParam === 'parent' ||
+      viewParam === 'home' ||
+      viewParam === 'beranda' ||
+      viewParam === 'parent' ||
+      viewParam === 'rekomendasi' ||
+      viewParam === 'dapur' ||
+      viewParam === 'game-hub' ||
+      viewParam === 'gamehub' ||
+      tabParam === 'game' ||
+      tabParam === 'rekomendasi' ||
+      tabParam === 'dapur' ||
+      tabParam === 'beranda'
+    ) {
+      setSession({
+        token: 'demo-parent',
+        user: { id: 'u-parent', fullName: 'Ibu Siti Rahma', role: 'parent', avatarId: 'av-1' },
+      });
+    } else if (roleParam === 'cadre' || viewParam === 'cadre') {
+      setSession({
+        token: 'demo-cadre',
+        user: { id: 'u-cadre', fullName: 'Kader Nurul Hidayah', role: 'cadre', avatarId: 'av-2', posyanduId: 'POSYANDU-MLT-01' },
+      });
+    } else if (roleParam === 'doctor' || viewParam === 'doctor') {
+      setSession({
+        token: 'demo-doctor',
+        user: { id: 'u-doctor', fullName: 'dr. Budi Santoso, Sp.A', role: 'doctor', avatarId: 'av-3', faskesId: 'PUSK-TEGALREJO' },
+      });
     } else {
       // Check existing session in storage
       const activeSession = api.getSession();
@@ -61,16 +91,18 @@ export function App() {
     Boolean(session && (session.user.role === 'doctor' || session.user.role === 'cadre') && currentView !== 'game');
 
   return (
-    <div className="min-h-screen w-full bg-white sm:bg-slate-100 flex items-center justify-center sm:p-4 font-sans">
+    <div className={`min-h-screen w-full bg-white ${isCleanFrame ? '' : 'sm:bg-slate-100'} flex items-center justify-center ${isCleanFrame ? 'p-0' : 'sm:p-4'} font-sans`}>
       <div
         className={
-          isExpandedWorkstation
+          isCleanFrame
+            ? 'w-full max-w-[412px] min-h-[915px] bg-white overflow-hidden relative flex flex-col'
+            : isExpandedWorkstation
             ? 'w-full max-w-6xl h-[100dvh] sm:h-[min(900px,96vh)] bg-white sm:rounded-3xl sm:shadow-2xl sm:border border-slate-200/90 overflow-hidden relative flex flex-col transition-all duration-normal'
             : 'w-full sm:max-w-[400px] h-[100dvh] sm:h-[min(820px,94vh)] bg-white sm:rounded-[44px] sm:shadow-2xl sm:border-[8px] sm:border-slate-800 overflow-hidden relative flex flex-col transition-all duration-normal'
         }
       >
         {/* Dynamic Notch Pill on Desktop Frame (only shown on mobile-frame mode) */}
-        {!isExpandedWorkstation && (
+        {!isExpandedWorkstation && !isCleanFrame && (
           <div className="hidden sm:block absolute top-2 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-800 rounded-pill z-50 pointer-events-none" />
         )}
 
