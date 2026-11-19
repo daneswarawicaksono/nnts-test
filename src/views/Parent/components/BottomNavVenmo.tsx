@@ -15,7 +15,7 @@ export const BottomNavVenmo: React.FC<BottomNavVenmoProps> = ({
 }) => {
   return (
     <nav className="relative z-40 w-full bg-white border-t border-[#E5E5E5] px-4 pt-2 pb-5 select-none shadow-[0_-2px_12px_rgba(0,0,0,0.03)]">
-      <div className="max-w-[400px] mx-auto flex items-center justify-between relative">
+      <div className="max-w-[400px] md:max-w-[720px] lg:max-w-[1000px] mx-auto flex items-center justify-between relative">
         {/* TAB 1: BERANDA */}
         <button
           type="button"

@@ -297,7 +297,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
   return (
     <div className="w-full h-full min-h-[100dvh] bg-white flex flex-col justify-between font-sans select-none relative overflow-hidden">
       {/* TOP HEADER: CHILD PROFILE CHIP & STREAK */}
-      <header className="px-5 pt-4 pb-3 flex items-center justify-between z-10 shrink-0 border-b border-[#E5E5E5] bg-white">
+      <header className="px-5 md:px-10 lg:px-14 pt-4 pb-3 flex items-center justify-between z-10 shrink-0 border-b border-[#E5E5E5] bg-white">
+        <span className="hidden lg:block text-2xl font-black text-[#34A853] tracking-tight mr-auto">otakatik<span className="text-slate-800">.</span></span>
         {/* Child Profile Trigger */}
         <button
           onClick={() => {
@@ -340,12 +341,22 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
       </header>
 
       {/* MAIN BODY CONTENT AREA (SCROLLABLE) */}
-      <main className="flex-1 px-4 py-4 overflow-y-auto z-10 space-y-4 pb-20">
+      <main className="flex-1 w-full px-4 md:px-10 lg:px-14 py-4 md:py-8 overflow-y-auto z-10 space-y-4 pb-20 bg-white md:bg-[#FBFCFA]">
         {/* ========================================= */}
         {/* TAB 1: BERANDA / HOME DASHBOARD           */}
         {/* ========================================= */}
         {activeTab === 'beranda' && (
-          <div className="space-y-4 animate-in fade-in duration-150">
+          <div className="max-w-[1440px] mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-150">
+            <div className="hidden md:flex items-end justify-between pb-1">
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#34A853]">Beranda keluarga</p>
+                <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-[#183122] mt-2">Tumbuh sehat, satu langkah setiap hari.</h1>
+                <p className="text-slate-500 text-sm mt-2">Pantau perkembangan {activeChild.name} dan pilih aktivitas untuk hari ini.</p>
+              </div>
+              <img src="/mascot/kerro_pose5_wave.png" alt="" className="w-20 h-20 object-contain" />
+            </div>
+            <div className="lg:grid lg:grid-cols-[minmax(0,1.18fr)_minmax(340px,0.82fr)] lg:gap-6 lg:items-start">
+              <div className="space-y-4 md:space-y-6 min-w-0">
             {/* 0. Hero Status & Rapor Skrining Anak */}
             <div className="bg-white rounded-3xl border border-[#E5E5E5] p-5 shadow-sm space-y-3.5">
               <div className="flex items-start justify-between">
@@ -418,6 +429,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
               childName={activeChild.name}
               ageMonths={activeChild.ageMonths}
             />
+              </div>
+              <div className="space-y-4 md:space-y-6 min-w-0 mt-4 lg:mt-0">
 
             {/* 2. Jadwal & Pengingat Posyandu */}
             <PosyanduScheduleCard />
@@ -428,6 +441,8 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({ session, onLog
                 setActiveTab('game');
               }}
             />
+              </div>
+            </div>
           </div>
         )}
 

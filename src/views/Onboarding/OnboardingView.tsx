@@ -250,7 +250,17 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   };
 
   return (
-    <div className="w-full h-full bg-white flex flex-col justify-between px-6 py-5 select-none relative overflow-y-auto">
+    <div className="w-full h-full bg-white flex flex-col justify-between px-6 py-5 md:px-10 md:py-8 lg:pl-[46%] lg:pr-[8%] select-none relative overflow-y-auto">
+      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[40%] bg-[#F4FAF4] border-r border-emerald-100 flex-col justify-between px-[6%] py-12 overflow-hidden" aria-hidden="true">
+        <span className="text-xl font-black tracking-tight text-[#34A853]">otakatik<span className="text-[#18251D]">.</span></span>
+        <div className="relative z-10">
+          <img src="/mascot/kerro_pose5_wave.png" alt="" className="w-52 h-52 object-contain mb-8" />
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#34A853] mb-4">Kenalan dengan Kerro</p>
+          <h1 className="text-4xl xl:text-5xl font-black tracking-tight leading-tight text-[#183122]">Langkah kecil untuk tumbuh sehat.</h1>
+          <p className="mt-5 text-base leading-relaxed text-slate-600 max-w-md">Buat profil keluarga, lalu mulai petualangan sehat si kecil bersama Kerro.</p>
+        </div>
+        <span className="text-xs text-slate-500">Smart growth through play.</span>
+      </aside>
       {/* TOP BAR */}
       <div className="w-full flex items-center justify-between pt-1 pb-1">
         <button
@@ -270,7 +280,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
 
       {/* STEP 1: INTRO 1 (Hi there! I'm Kerro!) */}
       {step === 1 && (
-        <div className="w-full max-w-xs mx-auto flex flex-col items-center justify-center my-auto py-4">
+        <div className="w-full max-w-xs md:max-w-[440px] mx-auto flex flex-col items-center justify-center my-auto py-4">
           {/* Speech Bubble */}
           <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl px-5 py-3 mb-6 text-center animate-fade-in">
             <span className="text-base sm:text-lg font-bold text-slate-800">
@@ -301,7 +311,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
 
       {/* STEP 2: INTRO 2 (Just 3 quick games...) */}
       {step === 2 && (
-        <div className="w-full max-w-xs mx-auto flex flex-col items-center justify-center my-auto py-4">
+        <div className="w-full max-w-xs md:max-w-[440px] mx-auto flex flex-col items-center justify-center my-auto py-4">
           {/* Speech Bubble */}
           <div className="relative bg-white border border-slate-200 shadow-sm rounded-2xl px-5 py-3.5 mb-6 text-center max-w-[270px] animate-fade-in">
             <span className="text-xs sm:text-sm font-bold text-slate-800 leading-snug">
@@ -332,7 +342,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
 
       {/* STEP 3: ROLE SELECTION (Who are you exploring for?) */}
       {step === 3 && (
-        <div className="w-full max-w-sm mx-auto flex flex-col justify-between my-auto py-2">
+        <div className="w-full max-w-sm md:max-w-[520px] mx-auto flex flex-col justify-between my-auto py-2">
           <div className="flex flex-col gap-3 mb-6">
             <h2 className="text-lg font-extrabold text-slate-900 mb-1">
               Pilih Peran Anda
@@ -443,7 +453,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
 
       {/* STEP 4: "Kenalan dulu, yuk!" (Hanya Nama, Tanpa Avatar) */}
       {step === 4 && (
-        <div className="w-full max-w-sm mx-auto flex flex-col justify-between my-auto py-2">
+        <div className="w-full max-w-sm md:max-w-[520px] mx-auto flex flex-col justify-between my-auto py-2">
           {/* Top Kerro with speech bubble */}
           <div className="flex items-center gap-3 mb-6">
             <img
@@ -490,7 +500,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
 
       {/* STEP 5: ABOUT YOUR LITTLE ONE / CREDENTIALS SETUP */}
       {step === 5 && (
-        <div className="w-full max-w-sm mx-auto flex flex-col justify-between my-auto py-1">
+        <div className="w-full max-w-sm md:max-w-[520px] mx-auto flex flex-col justify-between my-auto py-1">
           {/* Top Kerro with speech bubble */}
           <div className="flex items-center gap-3 mb-4">
             <img
